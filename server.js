@@ -56,7 +56,7 @@ io.on('connection', (socket) => {
 });
 
 // BẮT BUỘC TRÊN CLOUD: Lấy cổng động do Railway cấp, nếu chạy local sẽ dùng cổng 3000
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 http.listen(PORT, "0.0.0.0", () => {
     console.log(`Server Endless Parkour đang vận hành tại cổng: ${PORT}`);
 });
