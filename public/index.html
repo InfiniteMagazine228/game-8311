@@ -3,84 +3,111 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none, minimal-ui">
-    <title>Cyber Parkour Vô Tận - Cố Định Nút Bấm</title>
+    <title>Cyber Parkour Vô Tận - Bản Sửa Lỗi Hoàn Chỉnh</title>
     <link href="https://googleapis.com" rel="stylesheet">
     <style>
-        body { margin: 0; background: #070714; overflow: hidden; font-family: 'Rajdhani', sans-serif; user-select: none; touch-action: none; -webkit-touch-callout: none; }
-        canvas { display: block; background: radial-gradient(circle, #151530 0%, #050510 100%); margin: 0 auto; box-shadow: 0 0 50px rgba(0, 255, 204, 0.1); width: 100vw; height: 100vh; max-width: 800px; max-height: 600px; }
+        body { margin: 0; background: #070714; overflow: hidden; font-family: 'Rajdhani', sans-serif; user-select: none; touch-action: none; -webkit-touch-callout: none; position: relative; width: 100vw; height: 100vh; }
         
-        #game-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; box-sizing: border-box; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; }
-        .hud-panel { background: rgba(10, 10, 25, 0.85); border-left: 5px solid #00ffcc; padding: 10px 20px; display: inline-block; backdrop-filter: blur(8px); }
-        .hud-label { font-size: 12px; color: #8892b0; text-transform: uppercase; letter-spacing: 1px; }
-        .hud-value { font-family: 'Orbitron', sans-serif; font-size: 32px; font-weight: 900; color: #00ffcc; }
-        .highscore-box { margin-top: 3px; font-size: 13px; color: #ff3366; font-weight: bold; }
+        canvas { 
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle, #151530 0%, #050510 100%); 
+            box-shadow: 0 0 50px rgba(0, 255, 204, 0.1); 
+            width: 100vw; 
+            height: 100vh; 
+            max-width: 800px; 
+            max-height: 600px; 
+            z-index: 1; 
+        }
+        
+        #game-ui { 
+            position: absolute; 
+            top: 0; 
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100vw; 
+            height: 100vh; 
+            max-width: 800px;
+            max-height: 600px;
+            pointer-events: none; 
+            box-sizing: border-box; 
+            padding: 15px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            z-index: 10; 
+        }
+        
+        .hud-panel { background: rgba(10, 10, 25, 0.85); border-left: 5px solid #00ffcc; padding: 10px 20px; display: inline-block; backdrop-filter: blur(8px); pointer-events: auto; }
+        .hud-label { font-size: 14px; color: #00ffcc; text-transform: uppercase; letter-spacing: 1px; font-weight: bold; }
+        .hud-value { font-family: 'Orbitron', sans-serif; font-size: 36px; font-weight: 900; color: #ffffff; }
+        .highscore-box { margin-top: 3px; font-size: 14px; color: #ffcc00; font-weight: bold; }
 
-        .online-list { position: absolute; top: 15px; right: 15px; background: rgba(10, 10, 25, 0.85); border-right: 5px solid #ff3366; padding: 10px; width: 140px; backdrop-filter: blur(8px); }
+        .online-list { position: absolute; top: 15px; right: 15px; background: rgba(10, 10, 25, 0.85); border-right: 5px solid #ff3366; padding: 10px; width: 140px; backdrop-filter: blur(8px); pointer-events: auto; }
         .list-title { font-size: 12px; color: #ff3366; text-transform: uppercase; font-weight: 700; border-bottom: 1px solid rgba(255, 51, 102, 0.2); padding-bottom: 3px; display: flex; justify-content: space-between; }
         .player-item { font-size: 13px; color: #fff; padding: 3px 0; display: flex; justify-content: space-between; }
         .player-badge { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 5px; }
 
-        /* --- 🛠️ KHUNG NÚT BẤM BẮT BUỘC HIỂN THỊ TRÊN MỌI THIẾT BỊ --- */
         #mobile-controls { 
-            position: absolute; 
-            bottom: 30px; 
-            left: 0; 
             width: 100%; 
             display: flex; 
             justify-content: space-between; 
-            padding: 0 30px; 
+            padding: 0 15px 30px 15px; 
             box-sizing: border-box; 
             pointer-events: auto; 
-            z-index: 999;
         }
-        .d-pad { display: flex; gap: 20px; }
+        .d-pad { display: flex; gap: 30px; }
         .btn-touch { 
-            width: 75px; 
-            height: 75px; 
-            background: rgba(15, 15, 35, 0.8); 
-            border: 3px solid #00ffcc; 
+            width: 85px; 
+            height: 85px; 
+            background: rgba(20, 20, 45, 0.9); 
+            border: 4px solid #00ffcc; 
             border-radius: 50%; 
             display: flex; 
             justify-content: center; 
             align-items: center; 
             color: #00ffcc; 
-            font-size: 32px; 
+            font-size: 36px; 
             font-weight: bold; 
             backdrop-filter: blur(4px); 
-            box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.4);
             -webkit-user-select: none;
             user-select: none;
             cursor: pointer;
         }
         .btn-touch:active { 
-            background: rgba(0, 255, 204, 0.4); 
+            background: rgba(0, 255, 204, 0.5); 
             border-color: #ffffff; 
-            box-shadow: 0 0 25px #00ffcc;
-            transform: scale(0.92); 
+            box-shadow: 0 0 30px #00ffcc;
+            transform: scale(0.9); 
         }
         .btn-jump { 
             border-color: #ff3366; 
             color: #ff3366; 
-            width: 80px; 
-            height: 80px; 
-            box-shadow: 0 0 15px rgba(255, 51, 102, 0.3);
+            width: 90px; 
+            height: 90px; 
+            box-shadow: 0 0 20px rgba(255, 51, 102, 0.4);
         }
         .btn-jump:active { 
-            background: rgba(255, 51, 102, 0.4); 
+            background: rgba(255, 51, 102, 0.5); 
             border-color: #ffffff; 
-            box-shadow: 0 0 25px #ff3366;
+            box-shadow: 0 0 30px #ff3366;
         }
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
 
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
     <div id="game-ui">
         <div>
             <div class="hud-panel">
-                <div class="hud-label">Tầng Hiện Tại</div>
-                <div><span class="hud-value" id="floorUI">01</span> <span style="color:#4e5d78; font-size:14px;">F</span></div>
-                <div class="highscore-box">🏆 KỶ LỤC: <span id="highScoreUI">1</span>F</div>
+                <div class="hud-label">SỐ TẦNG CỦA BẠN</div>
+                <div><span class="hud-value" id="floorUI">01</span> <span style="color:#4e5d78; font-size:16px; font-weight: bold;">TẦNG</span></div>
+                <div class="highscore-box">👑 KỶ LỤC: <span id="highScoreUI">1</span> TẦNG</div>
             </div>
 
             <div class="online-list">
@@ -89,27 +116,25 @@
             </div>
         </div>
 
-        <!-- Các nút bấm luôn luôn xuất hiện -->
         <div id="mobile-controls">
             <div class="d-pad">
                 <div class="btn-touch" id="btnLeft">◀</div>
                 <div class="btn-touch" id="btnRight">▶</div>
             </div>
-            <div class="btn-touch btn-jump" id="btnJump">▲</div>
+            <div class="btn-touch btn-jump" id="btnJump">NHẢY</div>
         </div>
     </div>
-
-    <canvas id="gameCanvas" width="800" height="600"></canvas>
 
 <script>
 const socket = io(); 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-const gravity = 0.45;
+const gravity = 0.40; 
 let currentFriction = 0.85;
+let speedMultiplier = 1.0; 
 
-let player = { x: 400, y: 500, width: 24, height: 38, vx: 0, vy: 0, isGrounded: false, color: '#00ffcc', currentFloor: 1 };
+let player = { x: 400, y: 500, width: 26, height: 40, vx: 0, vy: 0, isGrounded: false, color: '#00ffcc', currentFloor: 1 };
 let otherPlayers = {};
 let keys = {};
 let touchKeys = { left: false, right: false, jump: false };
@@ -119,45 +144,42 @@ let globalHighestFloor = 1;
 let platforms = [];
 let maxGeneratedFloor = 1;
 
-const groundPlatform = { x: -600, y: 580, width: 3000, height: 40, floorNum: 1, type: 'normal', hasSpikes: false };
+const groundPlatform = { x: -1000, y: 580, width: 4000, height: 40, floorNum: 1, type: 'normal', hasSpikes: false };
 platforms.push(groundPlatform);
 
 function generateFloorsUpTo(targetFloor) {
-    while (maxGeneratedFloor < targetFloor + 20) {
+    while (maxGeneratedFloor < targetFloor + 25) {
         maxGeneratedFloor++;
         let i = maxGeneratedFloor;
-        let yPos = 580 - (i - 1) * 90; 
-        let width = 180 + Math.sin(i * 1.5) * 30; 
-        let xPos = 200 + (Math.cos(i * 2.3) * 120); 
+        
+        let yPos = 580 - (i - 1) * 70; 
+        let width = 320 + Math.sin(i * 1.5) * 30; 
+        let xPos = 240 + (Math.cos(i * 2) * 50); 
         
         let type = 'normal';
         let moveSpeed = 0;
-        let moveRange = 100;
+        let moveRange = 60;
         let startX = xPos;
 
-        if (i % 10 === 0) {
-            type = 'checkpoint';
-        } else {
-            let rand = Math.random();
-            if (rand < 0.2) {
-                type = 'moving';
-                moveSpeed = 1.5 + Math.sin(i) * 1.0;
-            } else if (rand >= 0.2 && rand < 0.35) {
-                type = 'spring';
-                width = 120;
-            } else if (rand >= 0.35 && rand < 0.5) {
-                type = 'ice';
-            }
+        let rand = Math.random();
+        if (rand < 0.15) {
+            type = 'moving';
+            moveSpeed = 0.7; 
+        } else if (rand >= 0.15 && rand < 0.3) {
+            type = 'spring'; 
+            width = 220; 
+        } else if (rand >= 0.3 && rand < 0.5) {
+            type = 'ice'; 
         }
 
-        let hasSpikes = (type === 'normal' || type === 'ice') && Math.sin(i * 9.8) > 0.4;
-        let spikeX = xPos + 30 + Math.random() * (width - 80);
-        let spikeWidth = 40;
+        let hasSpikes = (type === 'normal') && Math.random() < 0.1;
+        let spikeWidth = 30;
+        let spikeX = xPos + 40 + Math.random() * (width - 100);
         
         platforms.push({ 
-            x: xPos, startX, y: yPos, width, height: 14, floorNum: i, 
+            x: xPos, startX, y: yPos, width, height: 16, floorNum: i, 
             type, moveSpeed, moveRange, direction: 1,
-            hasSpikes, spikeX, spikeWidth 
+            hasSpikes, spikeX, spikeWidth
         });
     }
     platforms = platforms.filter(plat => plat.floorNum === 1 || plat.y < cameraY + 1200);
@@ -187,7 +209,7 @@ function updateGameUI() {
 function dieAndReset() {
     player.x = 400; player.y = 500; player.vx = 0; player.vy = 0;
     player.currentFloor = 1; player.isGrounded = false;
-    currentFriction = 0.85;
+    speedMultiplier = 1.0;
     if (!platforms.some(p => p.floorNum === 1)) platforms.push(groundPlatform);
     cameraY = player.y - canvas.height / 2 - 50; 
     updateGameUI();
@@ -206,23 +228,19 @@ socket.on('playerMoved', (p) => { if (otherPlayers[p.id]) { otherPlayers[p.id].x
 socket.on('playerDisconnected', (id) => { delete otherPlayers[id]; updateGameUI(); });
 socket.on('newHighScore', (score) => { globalHighestFloor = score; document.getElementById("highScoreUI").innerText = globalHighestFloor; });
 
-// Nhận phím máy tính
 window.addEventListener("keydown", e => keys[e.code] = true);
 window.addEventListener("keyup", e => keys[e.code] = false);
 
-// Nhận đồng thời cả sự kiện Touch (Mobile) và Mouse (PC giả lập trên AppsGeyser)
 function setupMobileButton(btnId, targetKey) {
     const btn = document.getElementById(btnId);
     
-    // Hỗ trợ màn hình cảm ứng cảm ứng
-    btn.addEventListener("touchstart", (e) => { e.preventDefault(); touchKeys[targetKey] = true; if (navigator.vibrate) navigator.vibrate(15); }, { passive: false });
+    btn.addEventListener("touchstart", (e) => { e.preventDefault(); touchKeys[targetKey] = true; if (navigator.vibrate) navigator.vibrate(20); }, { passive: false });
     btn.addEventListener("touchend", (e) => { e.preventDefault(); touchKeys[targetKey] = false; }, { passive: false });
     btn.addEventListener("touchcancel", (e) => { e.preventDefault(); touchKeys[targetKey] = false; }, { passive: false });
     
-    // Hỗ trợ click chuột bám giữ đà
     btn.addEventListener("mousedown", (e) => { e.preventDefault(); touchKeys[targetKey] = true; });
     btn.addEventListener("mouseup", (e) => { e.preventDefault(); touchKeys[targetKey] = false; });
-    btn.addEventListener("mouseleave", (e) => { touchKeys[targetKey] = false; });
+    btn.addEventListener("mouseleave", () => { touchKeys[targetKey] = false; });
 }
 
 setupMobileButton("btnLeft", "left");
@@ -235,10 +253,12 @@ function checkCollision(p, plat) {
 }
 
 function gameLoop() {
-    if (keys["ArrowRight"] || keys["KeyD"] || touchKeys.right) player.vx += 0.85;
-    if (keys["ArrowLeft"] || keys["KeyA"] || touchKeys.left) player.vx -= 0.85;
+    let moveForce = 0.9 * speedMultiplier;
+    
+    if (keys["ArrowRight"] || keys["KeyD"] || touchKeys.right) player.vx += moveForce;
+    if (keys["ArrowLeft"] || keys["KeyA"] || touchKeys.left) player.vx -= moveForce;
     if ((keys["Space"] || keys["ArrowUp"] || keys["KeyW"] || touchKeys.jump) && player.isGrounded) {
-        player.vy = -11.5;
+        player.vy = -10.5; 
         player.isGrounded = false;
     }
 
@@ -268,15 +288,14 @@ function gameLoop() {
             if(plat.floorNum > player.currentFloor) player.currentFloor = plat.floorNum;
 
             if (plat.type === 'moving') player.x += plat.moveSpeed * plat.direction;
-            if (plat.type === 'spring') { player.vy = -18; player.isGrounded = false; }
-            if (plat.type === 'ice') standingOnIce = true;
+            if (plat.type === 'spring') { player.vy = -15; player.isGrounded = false; }
+            if (plat.type === 'ice') { onIceThisFrame = true; }
         }
 
         if (plat.hasSpikes && player.currentFloor >= plat.floorNum - 1) {
             let spikeTop = plat.y - 12;
-            let currentSpikeX = plat.hasSpikes ? plat.spikeX : 0;
-            if (player.x + player.width > currentSpikeX && 
-                player.x < currentSpikeX + plat.spikeWidth &&
+            if (player.x + player.width > plat.spikeX && 
+                player.x < plat.spikeX + plat.spikeWidth &&
                 player.y + player.height >= spikeTop && player.y <= plat.y) {
                 dieAndReset();
                 break;
@@ -284,11 +303,17 @@ function gameLoop() {
         }
     }
 
+    if (onIceThisFrame) {
+        speedMultiplier = 0.45; 
+        currentFriction = 0.88; 
+    } else {
+        speedMultiplier = 1.0;  
+        currentFriction = 0.85;
+    }
+
     if (player.y > cameraY + canvas.height + 150) {
         dieAndReset();
     }
-
-    currentFriction = standingOnIce ? 0.98 : 0.85; 
 
     if (player.currentFloor !== oldFloor) updateGameUI();
 
@@ -304,21 +329,20 @@ function gameLoop() {
     ctx.save();
     ctx.translate(0, -cameraY);
 
-    // Lưới nền
-    ctx.strokeStyle = "rgba(0, 255, 204, 0.015)";
+    ctx.strokeStyle = "rgba(0, 255, 204, 0.01)";
     ctx.lineWidth = 1;
     let startGridY = Math.floor(cameraY / 40) * 40;
     for (let gY = startGridY; gY < startGridY + canvas.height + 40; gY += 40) {
-        ctx.beginPath(); ctx.moveTo(0, gY); ctx.lineTo(canvas.width, gY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, gY); ctx.lineTo(canvas.width, gY); 
+        ctx.stroke(); // 🛠️ ĐÃ SỬA LỖI: Thêm chính xác lệnh ctx.stroke() ở đây để không bị sập code
     }
 
     platforms.forEach(plat => {
         if (plat.y > cameraY - 100 && plat.y < cameraY + canvas.height + 100) {
-            if (plat.type === 'checkpoint') { ctx.shadowBlur = 15; ctx.shadowColor = "#ff0055"; ctx.fillStyle = "rgba(255, 0, 85, 0.95)"; }
-            else if (plat.type === 'moving') { ctx.shadowBlur = 10; ctx.shadowColor = "#cc33ff"; ctx.fillStyle = "rgba(204, 51, 255, 0.85)"; }
+            if (plat.type === 'moving') { ctx.shadowBlur = 10; ctx.shadowColor = "#cc33ff"; ctx.fillStyle = "rgba(204, 51, 255, 0.85)"; }
             else if (plat.type === 'spring') { ctx.shadowBlur = 12; ctx.shadowColor = "#ffcc00"; ctx.fillStyle = "rgba(255, 204, 0, 0.9)"; }
-            else if (plat.type === 'ice') { ctx.shadowBlur = 8; ctx.shadowColor = "#00ccff"; ctx.fillStyle = "rgba(0, 204, 255, 0.8)"; }
-            else { ctx.shadowBlur = 5; ctx.shadowColor = "#00ffcc"; ctx.fillStyle = "rgba(0, 255, 204, 0.65)"; }
+            else if (plat.type === 'ice') { ctx.shadowBlur = 12; ctx.shadowColor = "#0066ff"; ctx.fillStyle = "rgba(0, 102, 255, 0.9)"; } 
+            else { ctx.shadowBlur = 6; ctx.shadowColor = "#00ffcc"; ctx.fillStyle = "rgba(0, 255, 204, 0.7)"; }
             
             ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
             ctx.shadowBlur = 0;
@@ -328,20 +352,20 @@ function gameLoop() {
             if (plat.hasSpikes) {
                 ctx.shadowBlur = 10; ctx.shadowColor = "#ff3333"; ctx.fillStyle = "#ff3355";
                 ctx.beginPath();
-                let spikeCount = 4;
+                let spikeCount = 3;
                 let singleSpikeWidth = plat.spikeWidth / spikeCount;
                 for (let s = 0; s < spikeCount; s++) {
-                    let sX = (plat.type === 'moving' ? plat.x + (plat.width - plat.spikeWidth)/2 : plat.spikeX) + (s * singleSpikeWidth);
-                    if(plat.type === 'moving') plat.spikeX = plat.x + (plat.width - plat.spikeWidth)/2;
+                    let sX = plat.spikeX + (s * singleSpikeWidth);
                     ctx.moveTo(sX, plat.y); ctx.lineTo(sX + singleSpikeWidth / 2, plat.y - 12); ctx.lineTo(sX + singleSpikeWidth, plat.y);
                 }
                 ctx.fill();
                 ctx.shadowBlur = 0;
             }
 
-            ctx.fillStyle = "rgba(255,255,255,0.25)";
-            ctx.font = "bold 9px Orbitron";
-            ctx.fillText(plat.type.toUpperCase() + "-" + plat.floorNum, plat.x + 5, plat.y - 5);
+            ctx.fillStyle = "rgba(255,255,255,0.3)";
+            ctx.font = "bold 11px Orbitron";
+            let label = plat.type === 'ice' ? "ICE" : "TẦNG";
+            ctx.fillText(label + " " + plat.floorNum, plat.x + 15, plat.y - 5);
         }
     });
 
@@ -349,17 +373,12 @@ function gameLoop() {
         let p = otherPlayers[id];
         ctx.fillStyle = p.color;
         ctx.fillRect(p.x, p.y, 24, 38);
-        ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-        ctx.font = "9px Orbitron";
-        ctx.textAlign = "center";
-        ctx.fillText(`ID:${id.substring(0,4)}`, p.x + 12, p.y - 7);
-        ctx.textAlign = "left";
     });
 
     ctx.fillStyle = player.color;
     ctx.fillRect(player.x, player.y, player.width, player.height);
     ctx.strokeStyle = "#ffffff";
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 3;
     ctx.strokeRect(player.x, player.y, player.width, player.height);
 
     ctx.restore();
