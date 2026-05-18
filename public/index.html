@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Parkour 300 Tầng - Multiplayer</title>
+    <style>
+        body { margin: 0; background: #111; overflow: hidden; font-family: sans-serif; }
+        canvas { display: block; background: #1a1a2e; margin: 0 auto; }
+        #ui { position: absolute; top: 10px; left: 10px; color: white; font-size: 18px; pointer-events: none; }
+    </style>
+    <!-- Tự động tải thư viện kết nối mạng Socket.io từ Server -->
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+    <div id="ui">Tầng hiện tại: <span id="floorUI">1</span>/300</div>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+<script>
+const socket = io();
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// --- CẤU HÌNH VẬT LÝ ---
+const gravity = 0.5;
+const friction = 0.8;
+
+// --- KHỞI TẠO NHÂN VẬT CỦA BẠN ---
+let player = {
+    x: 400, y: 500,
+    width: 25, height: 40,
+    vx: 0, vy: 0,
+    isGrounded: false,
+    color: '#00ffcc',
+    currentFloor: 1
+};
+
+let otherPlayers = {};
+let keys = {};
+let cameraY = 0;
+
+// --- THUẬT TOÁN TỰ ĐỘNG TẠO 300 TẦNG ---
+// Thay vì viết tay 300 tầng, ta dùng toán học (Pseudo-random) để tạo ngẫu nhiên nhưng cố định cho tất cả người chơi
+let platforms = [];
+// Nền đất xuất phát
+platforms.push({ x: 0, y: 580, width: 2000, height: 40, isFloor: true, floorNum: 1 });
+
+for (let i = 2; i <= 300; i++) {
+    let yPos = 580 - (i - 1) * 150; // Mỗi tầng cách nhau 150px chiều cao
+    // Tạo 2-3 bậc nhảy độc lập cho mỗi tầng
+    let width = 100 + Math.sin(i) * 40; // Độ rộng ngẫu nhiên từ 60px đến 140px
+    let xPos = 200 + (Math.cos(i * 5) * 250) + 200; // Vị trí X ngẫu nhiên trong màn hình
+    
+    platforms.push({
+        x: xPos,
+        y: yPos,
+        width: width,
+        height: 15,
+        isFloor: true,
+        floorNum: i
+    });
+}
+
+// --- KẾT NỐI MẠNG (SOCKET.IO MULTIPLAYER) ---
+socket.on('currentPlayers', (players) => {
+    Object.keys(players).forEach((id) => {
+        if (id !== socket.id) {
+            otherPlayers[id] = players[id];
+        } else {
+            player.color = players[id].color; // Lấy màu ngẫu nhiên server cấp
+        }
+    });
+});
+
+socket.on('newPlayer', (playerInfo) => {
+    otherPlayers[playerInfo.id] = playerInfo;
+});
+
+socket.on('playerMoved', (playerInfo) => {
+    if (otherPlayers[playerInfo.id]) {
+        otherPlayers[playerInfo.id].x = playerInfo.x;
+        otherPlayers[playerInfo.id].y = playerInfo.y;
+        otherPlayers[playerInfo.id].currentFloor = playerInfo.currentFloor;
+    }
+});
+
+socket.on('playerDisconnected', (id) => {
+    delete otherPlayers[id];
+});
+
+// --- LẮNG NGHE ĐIỀU KHIỂN ---
+window.addEventListener("keydown", e => keys[e.code] = true);
+window.addEventListener("keyup", e => keys[e.code] = false);
+
+// --- HÀM KIỂM TRA VA CHẠM (COLLISION DETECT) ---
+function checkCollision(p, plat) {
+    return p.x < plat.x + plat.width &&
+           p.x + p.width > plat.x &&
+           p.y + p.height >= plat.y &&
+           p.y + p.height <= plat.y + plat.height &&
+           p.vy >= 0; // Chỉ tính va chạm khi nhân vật đang rơi xuống
+}
+
+// --- VÒNG LẶP GAME (GAME LOOP) ---
+function gameLoop() {
+    // 1. Xử lý di chuyển của người chơi (Bấm nút)
+    if (keys["ArrowRight"] || keys["KeyD"]) player.vx += 1;
+    if (keys["ArrowLeft"] || keys["KeyA"]) player.vx -= 1;
+    if ((keys["Space"] || keys["ArrowUp"] || keys["KeyW"]) && player.isGrounded) {
+        player.vy = -12; // Lực nhảy cao
+        player.isGrounded = false;
+    }
+
+    // Áp dụng lực vật lý (Trọng lực + Ma sát)
+    player.vx *= friction;
+    player.vy += gravity;
+    player.x += player.vx;
+    player.y += player.vy;
+
+    // 2. Xử lý va chạm với 300 tầng gạch
+    player.isGrounded = false;
+    for (let plat of platforms) {
+        if (checkCollision(player, plat)) {
+            player.y = plat.y - player.height;
+            player.vy = 0;
+            player.isGrounded = true;
+            if(plat.floorNum > player.currentFloor) {
+                player.currentFloor = plat.floorNum;
+                document.getElementById("floorUI").innerText = player.currentFloor;
+            }
+        }
+    }
+
+    // Giới hạn biên màn hình trái phải
+    if (player.x < 0) player.x = 0;
+    if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
+
+    // 3. ĐỒNG BỘ CAMERA: Camera tự động cuộn lên khi người chơi lên cao
+    let targetCameraY = player.y - canvas.height / 2;
+    cameraY += (targetCameraY - cameraY) * 0.1; // Hiệu ứng mượt mà (Lerp)
+
+    // Gửi vị trí mới lên Server để người khác thấy
+    socket.emit('playerMovement', { x: player.x, y: player.y, currentFloor: player.currentFloor });
+
+    // 4. VẼ ĐỒ HỌA
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.save();
+    ctx.translate(0, -cameraY); // Dịch chuyển mọi vật thể theo vị trí Camera
+
+    // Vẽ 300 tầng
+    platforms.forEach(plat => {
+        ctx.fillStyle = plat.floorNum % 10 === 0 ? "#ff3366" : "#4ecca3"; // Đổi màu mỗi 10 tầng mốc
+        ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+        
+        // Ghi số tầng lên gạch
+        ctx.fillStyle = "#fff";
+        ctx.font = "12px Arial";
+        ctx.fillText("Tầng " + plat.floorNum, plat.x + 5, plat.y - 5);
+    });
+
+    // Vẽ những người chơi khác trực tuyến
+    Object.keys(otherPlayers).forEach((id) => {
+        let p = otherPlayers[id];
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, 25, 40);
+        // Vẽ tên hoặc ID rút gọn phía trên đầu người chơi khác
+        ctx.fillStyle = "rgba(255,255,255,0.6)";
+        ctx.font = "10px Arial";
+        ctx.fillText(`ID: ${p.id.substring(0,4)} (Tập ${p.currentFloor})`, p.x - 10, p.y - 10);
+    });
+
+    // Vẽ chính bạn
+    ctx.fillStyle = player.color;
+    ctx.fillRect(player.x, player.y, player.width, player.height);
+    ctx.strokeStyle = "#fff";
+    ctx.strokeRect(player.x, player.y, player.width, player.height);
+
+    ctx.restore();
+
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+</body>
+</html>
