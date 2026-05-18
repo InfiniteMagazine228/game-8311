@@ -1,7 +1,7 @@
 {
-  "name": "cyber-parkour-300",
+  "name": "cyber-parkour-endless",
   "version": "1.0.0",
-  "description": "Game Parkour 300 tang Multiplayer",
+  "description": "Game Endless Parkour Multiplayer",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
