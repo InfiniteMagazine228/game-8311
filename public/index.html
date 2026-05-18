@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none, minimal-ui">
-    <title>Cyber Parkour Vô Tận - Bản Sửa Lỗi Hoàn Chỉnh</title>
+    <title>Cyber Parkour Vô Tận - Bản Chuẩn Khắc Phục Màn Hình Đen</title>
     <link href="https://googleapis.com" rel="stylesheet">
     <style>
         body { margin: 0; background: #070714; overflow: hidden; font-family: 'Rajdhani', sans-serif; user-select: none; touch-action: none; -webkit-touch-callout: none; position: relative; width: 100vw; height: 100vh; }
@@ -100,8 +100,10 @@
 </head>
 <body>
 
+    <!-- KHUNG VẼ ĐỒ HỌA GAME -->
     <canvas id="gameCanvas" width="800" height="600"></canvas>
 
+    <!-- LỚP HUD ĐỀM TRÊN MÀN HÌNH -->
     <div id="game-ui">
         <div>
             <div class="hud-panel">
@@ -289,7 +291,7 @@ function gameLoop() {
 
             if (plat.type === 'moving') player.x += plat.moveSpeed * plat.direction;
             if (plat.type === 'spring') { player.vy = -15; player.isGrounded = false; }
-            if (plat.type === 'ice') { onIceThisFrame = true; }
+            if (plat.type === 'ice') { standingOnIce = true; }
         }
 
         if (plat.hasSpikes && player.currentFloor >= plat.floorNum - 1) {
@@ -303,7 +305,7 @@ function gameLoop() {
         }
     }
 
-    if (onIceThisFrame) {
+    if (standingOnIce) {
         speedMultiplier = 0.45; 
         currentFriction = 0.88; 
     } else {
@@ -329,12 +331,13 @@ function gameLoop() {
     ctx.save();
     ctx.translate(0, -cameraY);
 
+    // Lưới nền mờ
     ctx.strokeStyle = "rgba(0, 255, 204, 0.01)";
     ctx.lineWidth = 1;
     let startGridY = Math.floor(cameraY / 40) * 40;
     for (let gY = startGridY; gY < startGridY + canvas.height + 40; gY += 40) {
         ctx.beginPath(); ctx.moveTo(0, gY); ctx.lineTo(canvas.width, gY); 
-        ctx.stroke(); // 🛠️ ĐÃ SỬA LỖI: Thêm chính xác lệnh ctx.stroke() ở đây để không bị sập code
+        ctx.stroke(); // 🛠️ ĐÃ SỬA LỖI ĐÁNG TIẾC: Thêm chính xác lệnh ctx.stroke() để chạy mượt mà
     }
 
     platforms.forEach(plat => {
