@@ -2,11 +2,11 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none">
-    <title>Cyber Parkour Vô Tận - Đã Sửa Lỗi Chết Rơi Tự Do</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none, minimal-ui">
+    <title>Cyber Parkour Vô Tận</title>
     <link href="https://googleapis.com" rel="stylesheet">
     <style>
-        body { margin: 0; background: #070714; overflow: hidden; font-family: 'Rajdhani', sans-serif; user-select: none; touch-action: none; }
+        body { margin: 0; background: #070714; overflow: hidden; font-family: 'Rajdhani', sans-serif; user-select: none; touch-action: none; -webkit-touch-callout: none; }
         canvas { display: block; background: radial-gradient(circle, #151530 0%, #050510 100%); margin: 0 auto; box-shadow: 0 0 50px rgba(0, 255, 204, 0.1); width: 100vw; height: 100vh; max-width: 800px; max-height: 600px; }
         
         #game-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; box-sizing: border-box; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; }
@@ -15,19 +15,66 @@
         .hud-value { font-family: 'Orbitron', sans-serif; font-size: 32px; font-weight: 900; color: #00ffcc; }
         .highscore-box { margin-top: 3px; font-size: 13px; color: #ff3366; font-weight: bold; }
 
-        .online-list { position: absolute; top: 15px; right: 15px; background: rgba(10, 10, 25, 0.85); border-right: 5px solid #ff3366; padding: 10px; width: 160px; backdrop-filter: blur(8px); }
+        .online-list { position: absolute; top: 15px; right: 15px; background: rgba(10, 10, 25, 0.85); border-right: 5px solid #ff3366; padding: 10px; width: 140px; backdrop-filter: blur(8px); }
         .list-title { font-size: 12px; color: #ff3366; text-transform: uppercase; font-weight: 700; border-bottom: 1px solid rgba(255, 51, 102, 0.2); padding-bottom: 3px; display: flex; justify-content: space-between; }
         .player-item { font-size: 13px; color: #fff; padding: 3px 0; display: flex; justify-content: space-between; }
         .player-badge { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 5px; }
 
-        #mobile-controls { position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; pointer-events: auto; }
-        .d-pad { display: flex; gap: 15px; }
-        .btn-touch { width: 65px; height: 65px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(0, 255, 204, 0.4); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #00ffcc; font-size: 28px; font-weight: bold; backdrop-filter: blur(4px); -webkit-user-select: none; }
-        .btn-touch:active { background: rgba(0, 255, 204, 0.3); border-color: #00ffcc; transform: scale(0.95); }
-        .btn-jump { border-color: rgba(255, 51, 102, 0.4); color: #ff3366; width: 70px; height: 70px; }
-        .btn-jump:active { background: rgba(255, 51, 102, 0.3); border-color: #ff3366; }
+        /* --- 🛠️ HỆ THỐNG NÚT BẤM CẢM ỨNG ĐƯỢC ÉP HIỂN THỊ TRÊN ANDROID / IOS --- */
+        #mobile-controls { 
+            position: absolute; 
+            bottom: 30px; 
+            left: 0; 
+            width: 100%; 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 0 30px; 
+            box-sizing: border-box; 
+            pointer-events: auto; /* Bật tương tác chạm */
+            z-index: 999;
+        }
+        .d-pad { display: flex; gap: 20px; }
+        .btn-touch { 
+            width: 75px; 
+            height: 75px; 
+            background: rgba(15, 15, 35, 0.6); 
+            border: 3px solid #00ffcc; 
+            border-radius: 50%; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            color: #00ffcc; 
+            font-size: 32px; 
+            font-weight: bold; 
+            backdrop-filter: blur(4px); 
+            box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        /* Hiệu ứng phát sáng mạnh khi ngón tay đè vào nút */
+        .btn-touch:active { 
+            background: rgba(0, 255, 204, 0.4); 
+            border-color: #ffffff; 
+            box-shadow: 0 0 25px #00ffcc;
+            transform: scale(0.92); 
+        }
+        .btn-jump { 
+            border-color: #ff3366; 
+            color: #ff3366; 
+            width: 80px; 
+            height: 80px; 
+            box-shadow: 0 0 15px rgba(255, 51, 102, 0.3);
+        }
+        .btn-jump:active { 
+            background: rgba(255, 51, 102, 0.4); 
+            border-color: #ffffff; 
+            box-shadow: 0 0 25px #ff3366;
+        }
 
-        @media (pointer: fine) { #mobile-controls { display: none; } }
+        /* Tự động ẩn các nút này đi NẾU người chơi dùng máy tính có màn hình không cảm ứng */
+        @media (pointer: fine) and (hover: hover) {
+            #mobile-controls { display: none; }
+        }
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
@@ -47,6 +94,7 @@
             </div>
         </div>
 
+        <!-- Khung chứa 3 nút bấm cảm ứng kích thước lớn cho Android / iOS -->
         <div id="mobile-controls">
             <div class="d-pad">
                 <div class="btn-touch" id="btnLeft">◀</div>
@@ -76,7 +124,6 @@ let globalHighestFloor = 1;
 let platforms = [];
 let maxGeneratedFloor = 1;
 
-// Khởi tạo nền đất xuất phát
 const groundPlatform = { x: -600, y: 580, width: 3000, height: 40, floorNum: 1, type: 'normal', hasSpikes: false };
 platforms.push(groundPlatform);
 
@@ -118,7 +165,6 @@ function generateFloorsUpTo(targetFloor) {
             hasSpikes, spikeX, spikeWidth 
         });
     }
-    // 🛠️ SỬA LỖI: Lọc dọn rác nhưng luôn bảo lưu vĩnh viễn nền đất tầng 1 (floorNum !== 1)
     platforms = platforms.filter(plat => plat.floorNum === 1 || plat.y < cameraY + 1200);
 }
 
@@ -143,22 +189,11 @@ function updateGameUI() {
     document.getElementById("playerListEntries").innerHTML = listHTML;
 }
 
-// 🛠️ SỬA LỖI: Hàm xử lý hồi sinh thông minh khóa camera lập tức
 function dieAndReset() {
-    player.x = 400; 
-    player.y = 500; 
-    player.vx = 0; 
-    player.vy = 0;
-    player.currentFloor = 1; 
-    player.isGrounded = false;
+    player.x = 400; player.y = 500; player.vx = 0; player.vy = 0;
+    player.currentFloor = 1; player.isGrounded = false;
     currentFriction = 0.85;
-    
-    // Đảm bảo nền móng tầng 1 tồn tại trong danh sách gạch
-    if (!platforms.some(p => p.floorNum === 1)) {
-        platforms.push(groundPlatform);
-    }
-    
-    // Ép camera nhảy ngay lập tức về vị trí xuất phát, tránh bị trễ khung hình gây rơi tự do
+    if (!platforms.some(p => p.floorNum === 1)) platforms.push(groundPlatform);
     cameraY = player.y - canvas.height / 2 - 50; 
     updateGameUI();
 }
@@ -176,14 +211,35 @@ socket.on('playerMoved', (p) => { if (otherPlayers[p.id]) { otherPlayers[p.id].x
 socket.on('playerDisconnected', (id) => { delete otherPlayers[id]; updateGameUI(); });
 socket.on('newHighScore', (score) => { globalHighestFloor = score; document.getElementById("highScoreUI").innerText = globalHighestFloor; });
 
+// Bàn phím PC
 window.addEventListener("keydown", e => keys[e.code] = true);
 window.addEventListener("keyup", e => keys[e.code] = false);
 
+// --- 🛠️ TỐI ƯU SỰ KIỆN CHẠM CẢM ỨNG CHO ANDROID / IOS ---
 function setupMobileButton(btnId, targetKey) {
     const btn = document.getElementById(btnId);
-    btn.addEventListener("touchstart", (e) => { e.preventDefault(); touchKeys[targetKey] = true; });
-    btn.addEventListener("touchend", (e) => { e.preventDefault(); touchKeys[targetKey] = false; });
+    
+    // Khi nhấn ngón tay xuống
+    btn.addEventListener("touchstart", (e) => { 
+        e.preventDefault(); 
+        touchKeys[targetKey] = true; 
+        // Tạo hiệu ứng rung nhẹ 15ms khi bấm nút (Chỉ hoạt động trên Android)
+        if (navigator.vibrate) navigator.vibrate(15); 
+    }, { passive: false });
+    
+    // Khi nhấc ngón tay lên
+    btn.addEventListener("touchend", (e) => { 
+        e.preventDefault(); 
+        touchKeys[targetKey] = false; 
+    }, { passive: false });
+
+    // Phòng trường hợp ngón tay trượt ra ngoài vùng nút
+    btn.addEventListener("touchcancel", (e) => { 
+        e.preventDefault(); 
+        touchKeys[targetKey] = false; 
+    }, { passive: false });
 }
+
 setupMobileButton("btnLeft", "left");
 setupMobileButton("btnRight", "right");
 setupMobileButton("btnJump", "jump");
@@ -243,7 +299,6 @@ function gameLoop() {
         }
     }
 
-    // 🛠️ SỬA LỖI bổ sung: Rơi xuống hố sâu ngoài màn hình (nếu nhảy trượt khối) cũng tự động reset về tầng 1
     if (player.y > cameraY + canvas.height + 150) {
         dieAndReset();
     }
@@ -264,6 +319,7 @@ function gameLoop() {
     ctx.save();
     ctx.translate(0, -cameraY);
 
+    // Lưới nền
     ctx.strokeStyle = "rgba(0, 255, 204, 0.015)";
     ctx.lineWidth = 1;
     let startGridY = Math.floor(cameraY / 40) * 40;
