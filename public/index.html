@@ -10,13 +10,11 @@
         canvas { display: block; background: radial-gradient(circle, #151530 0%, #050510 100%); margin: 0 auto; box-shadow: 0 0 50px rgba(0, 255, 204, 0.1); }
         #game-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; box-sizing: border-box; padding: 25px; }
         
-        /* Khung hiển thị Tầng hiện tại & Kỷ lục */
         .hud-panel { background: rgba(10, 10, 25, 0.85); border-left: 5px solid #00ffcc; padding: 12px 25px; display: inline-block; backdrop-filter: blur(8px); box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5); }
         .hud-label { font-size: 13px; color: #8892b0; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; }
         .hud-value { font-family: 'Orbitron', sans-serif; font-size: 42px; font-weight: 900; color: #00ffcc; text-shadow: 0 0 10px rgba(0, 255, 204, 0.5); }
         .highscore-box { margin-top: 5px; font-size: 14px; color: #ff3366; font-weight: bold; letter-spacing: 1px; }
 
-        /* Danh sách phòng */
         .online-list { position: absolute; top: 25px; right: 25px; background: rgba(10, 10, 25, 0.85); border-right: 5px solid #ff3366; padding: 15px; width: 220px; backdrop-filter: blur(8px); box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5); }
         .list-title { font-size: 14px; color: #ff3366; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; font-weight: 700; border-bottom: 1px solid rgba(255, 51, 102, 0.2); padding-bottom: 5px; display: flex; justify-content: space-between; }
         .player-item { font-size: 15px; color: #fff; padding: 5px 0; display: flex; justify-content: space-between; align-items: center; }
@@ -24,6 +22,7 @@
         .controls-hint { position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.7); padding: 8px 20px; border-radius: 20px; color: #8892b0; font-size: 14px; }
         .key-cap { background: #333; color: #fff; padding: 2px 6px; border-radius: 4px; margin: 0 2px; font-family: monospace; }
     </style>
+    <!-- Tự động tải từ server cùng nguồn -->
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
@@ -48,7 +47,8 @@
     <canvas id="gameCanvas" width="800" height="600"></canvas>
 
 <script>
-const socket = io();
+// QUAN TRỌNG: Để trống ngoặc giúp tự động nhận diện chính xác domain trên Cloud (Railway)
+const socket = io(); 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
@@ -61,28 +61,24 @@ let keys = {};
 let cameraY = 0;
 let globalHighestFloor = 1;
 
-// --- THUẬT TOÁN SINH MAP VÔ TẬN ĐỘNG (INFINITE GENERATION) ---
 let platforms = [];
 let maxGeneratedFloor = 1;
 
-// Khởi tạo nền móng đất ban đầu
+// Khởi tạo nền móng
 platforms.push({ x: 0, y: 580, width: 2000, height: 40, floorNum: 1 });
 
-// Hàm sinh tầng mới dựa trên số tầng yêu cầu
+// Thuật toán sinh tầng động
 function generateFloorsUpTo(targetFloor) {
-    while (maxGeneratedFloor < targetFloor + 20) { // Luôn sinh trước 20 tầng phía trên tầm nhìn
+    while (maxGeneratedFloor < targetFloor + 20) {
         maxGeneratedFloor++;
         let i = maxGeneratedFloor;
-        let yPos = 580 - (i - 1) * 145; // Chiều cao mỗi tầng cách nhau 145px
-        
-        // Thuật toán sin/cos xáo trộn vị trí bậc nhảy mượt mà, không bị kẹt đường
+        let yPos = 580 - (i - 1) * 145;
         let width = 95 + Math.sin(i * 1.5) * 25; 
         let xPos = 180 + (Math.cos(i * 2.3) * 240) + 180;
         
         platforms.push({ x: xPos, y: yPos, width: width, height: 14, floorNum: i });
     }
-
-    // TỐI ƯU BỘ NHỚ (Garbage Collection): Xóa bớt các tầng cũ nằm quá sâu dưới Camera (> 1200px) để tránh giật lag
+    // Xóa bớt gạch cũ quá xa phía dưới để tối ưu hiệu năng bộ nhớ
     platforms = platforms.filter(plat => plat.y < cameraY + 1200);
 }
 
@@ -90,7 +86,6 @@ function updateGameUI() {
     document.getElementById("floorUI").innerText = player.currentFloor < 10 ? "0" + player.currentFloor : player.currentFloor;
     document.getElementById("highScoreUI").innerText = globalHighestFloor;
 
-    // Sắp xếp bảng xếp hạng trong phòng ai tầng cao nhất đứng đầu
     let allPlayers = [{ name: 'Bạn', color: player.color, floor: player.currentFloor }];
     Object.keys(otherPlayers).forEach(id => {
         allPlayers.push({ name: `ID:${id.substring(0,4)}`, color: otherPlayers[id].color, floor: otherPlayers[id].currentFloor });
@@ -108,7 +103,7 @@ function updateGameUI() {
     document.getElementById("playerListEntries").innerHTML = listHTML;
 }
 
-// --- ĐỒNG BỘ MULTIPLAYER SỰ KIỆN MẠNG ---
+// Đồng bộ qua Socket.io
 socket.on('currentPlayers', (data) => {
     globalHighestFloor = data.globalHighestFloor;
     Object.keys(data.players).forEach((id) => {
@@ -150,7 +145,6 @@ function checkCollision(p, plat) {
            p.y + p.height >= plat.y && p.y + p.height <= plat.y + plat.height && p.vy >= 0;
 }
 
-// --- VÒNG LẶP GAME LOOP ---
 function gameLoop() {
     if (keys["ArrowRight"] || keys["KeyD"]) player.vx += 0.75;
     if (keys["ArrowLeft"] || keys["KeyA"]) player.vx -= 0.75;
@@ -164,7 +158,6 @@ function gameLoop() {
     player.x += player.vx;
     player.y += player.vy;
 
-    // Liên tục gọi hàm sinh tầng dựa theo vị trí tầng hiện tại của người chơi
     generateFloorsUpTo(player.currentFloor);
 
     player.isGrounded = false;
@@ -184,18 +177,16 @@ function gameLoop() {
     if (player.x < 0) player.x = 0;
     if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
 
-    // Camera bám sát theo trục dọc người chơi mượt mà
     let targetCameraY = player.y - canvas.height / 2 - 50;
     cameraY += (targetCameraY - cameraY) * 0.1;
 
     socket.emit('playerMovement', { x: player.x, y: player.y, currentFloor: player.currentFloor });
 
-    // --- VẼ ĐỒ HỌA NEON VÔ TẬN ---
+    // Vẽ đồ họa
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
     ctx.translate(0, -cameraY);
 
-    // Vẽ hiệu ứng lưới Grid background chạy vô tận theo camera
     ctx.strokeStyle = "rgba(0, 255, 204, 0.015)";
     ctx.lineWidth = 1;
     let startGridY = Math.floor(cameraY / 40) * 40;
@@ -203,15 +194,12 @@ function gameLoop() {
         ctx.beginPath(); ctx.moveTo(0, gY); ctx.lineTo(canvas.width, gY); ctx.stroke();
     }
 
-    // Vẽ các bậc nhảy đang nằm trong khung nhìn camera
     platforms.forEach(plat => {
         if (plat.y > cameraY - 100 && plat.y < cameraY + canvas.height + 100) {
-            let isMilestone = plat.floorNum % 50 === 0; // Đổi màu rực rỡ đặc biệt mỗi 50 tầng
-            
+            let isMilestone = plat.floorNum % 50 === 0;
             ctx.shadowBlur = isMilestone ? 18 : 6;
             ctx.shadowColor = isMilestone ? "#ff0055" : "#00ffcc";
             ctx.fillStyle = isMilestone ? "rgba(255, 0, 85, 0.95)" : "rgba(0, 255, 204, 0.75)";
-            
             ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
             ctx.shadowBlur = 0;
 
@@ -221,12 +209,10 @@ function gameLoop() {
         }
     });
 
-    // Vẽ bóng của những người chơi khác
     Object.keys(otherPlayers).forEach((id) => {
         let p = otherPlayers[id];
         ctx.fillStyle = p.color;
         ctx.fillRect(p.x, p.y, 24, 38);
-        
         ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
         ctx.font = "9px Orbitron";
         ctx.textAlign = "center";
@@ -234,7 +220,6 @@ function gameLoop() {
         ctx.textAlign = "left";
     });
 
-    // Vẽ chính bạn
     ctx.fillStyle = player.color;
     ctx.fillRect(player.x, player.y, player.width, player.height);
     ctx.strokeStyle = "#ffffff";
