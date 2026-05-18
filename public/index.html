@@ -2,44 +2,60 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber Parkour Vô Tận - Chế Độ Dễ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none">
+    <title>Cyber Parkour Vô Tận - Mobile & Bẫy Gai</title>
     <link href="https://googleapis.com" rel="stylesheet">
     <style>
-        body { margin: 0; background: #070714; overflow: hidden; font-family: 'Rajdhani', sans-serif; user-select: none; }
-        canvas { display: block; background: radial-gradient(circle, #151530 0%, #050510 100%); margin: 0 auto; box-shadow: 0 0 50px rgba(0, 255, 204, 0.1); }
-        #game-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; box-sizing: border-box; padding: 25px; }
+        body { margin: 0; background: #070714; overflow: hidden; font-family: 'Rajdhani', sans-serif; user-select: none; touch-action: none; }
+        canvas { display: block; background: radial-gradient(circle, #151530 0%, #050510 100%); margin: 0 auto; box-shadow: 0 0 50px rgba(0, 255, 204, 0.1); width: 100vw; height: 100vh; max-width: 800px; max-height: 600px; }
         
-        .hud-panel { background: rgba(10, 10, 25, 0.85); border-left: 5px solid #00ffcc; padding: 12px 25px; display: inline-block; backdrop-filter: blur(8px); box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5); }
-        .hud-label { font-size: 13px; color: #8892b0; text-transform: uppercase; letter-spacing: 2px; font-weight: 700; }
-        .hud-value { font-family: 'Orbitron', sans-serif; font-size: 42px; font-weight: 900; color: #00ffcc; text-shadow: 0 0 10px rgba(0, 255, 204, 0.5); }
-        .highscore-box { margin-top: 5px; font-size: 14px; color: #ff3366; font-weight: bold; letter-spacing: 1px; }
+        #game-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; box-sizing: border-box; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; }
+        .hud-panel { background: rgba(10, 10, 25, 0.85); border-left: 5px solid #00ffcc; padding: 10px 20px; display: inline-block; backdrop-filter: blur(8px); }
+        .hud-label { font-size: 12px; color: #8892b0; text-transform: uppercase; letter-spacing: 1px; }
+        .hud-value { font-family: 'Orbitron', sans-serif; font-size: 32px; font-weight: 900; color: #00ffcc; }
+        .highscore-box { margin-top: 3px; font-size: 13px; color: #ff3366; font-weight: bold; }
 
-        .online-list { position: absolute; top: 25px; right: 25px; background: rgba(10, 10, 25, 0.85); border-right: 5px solid #ff3366; padding: 15px; width: 220px; backdrop-filter: blur(8px); box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5); }
-        .list-title { font-size: 14px; color: #ff3366; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; font-weight: 700; border-bottom: 1px solid rgba(255, 51, 102, 0.2); padding-bottom: 5px; display: flex; justify-content: space-between; }
-        .player-item { font-size: 15px; color: #fff; padding: 5px 0; display: flex; justify-content: space-between; align-items: center; }
-        .player-badge { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
-        .controls-hint { position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.7); padding: 8px 20px; border-radius: 20px; color: #8892b0; font-size: 14px; }
-        .key-cap { background: #333; color: #fff; padding: 2px 6px; border-radius: 4px; margin: 0 2px; font-family: monospace; }
+        .online-list { position: absolute; top: 15px; right: 15px; background: rgba(10, 10, 25, 0.85); border-right: 5px solid #ff3366; padding: 10px; width: 160px; backdrop-filter: blur(8px); }
+        .list-title { font-size: 12px; color: #ff3366; text-transform: uppercase; font-weight: 700; border-bottom: 1px solid rgba(255, 51, 102, 0.2); padding-bottom: 3px; display: flex; justify-content: space-between; }
+        .player-item { font-size: 13px; color: #fff; padding: 3px 0; display: flex; justify-content: space-between; }
+        .player-badge { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+
+        /* --- HỆ THỐNG NÚT BẤM ẢO CHO ĐIỆN THOẠI (MOBILE UI) --- */
+        #mobile-controls { position: absolute; bottom: 20px; left: 0; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; box-sizing: border-box; pointer-events: auto; }
+        .d-pad { display: flex; gap: 15px; }
+        .btn-touch { width: 65px; height: 65px; background: rgba(255, 255, 255, 0.1); border: 2px solid rgba(0, 255, 204, 0.4); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: #00ffcc; font-size: 28px; font-weight: bold; backdrop-filter: blur(4px); -webkit-user-select: none; }
+        .btn-touch:active { background: rgba(0, 255, 204, 0.3); border-color: #00ffcc; transform: scale(0.95); }
+        .btn-jump { border-color: rgba(255, 51, 102, 0.4); color: #ff3366; width: 70px; height: 70px; }
+        .btn-jump:active { background: rgba(255, 51, 102, 0.3); border-color: #ff3366; }
+
+        /* Ẩn nút trên máy tính, chỉ hiện khi dùng điện thoại */
+        @media (pointer: fine) { #mobile-controls { display: none; } }
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
 
     <div id="game-ui">
-        <div class="hud-panel">
-            <div class="hud-label">Tầng Đang Đứng</div>
-            <div><span class="hud-value" id="floorUI">01</span> <span style="color:#4e5d78; font-size:18px;">F</span></div>
-            <div class="highscore-box">🏆 KỶ LỤC PHÒNG: <span id="highScoreUI">1</span>F</div>
+        <div>
+            <div class="hud-panel">
+                <div class="hud-label">Tầng Hiện Tại</div>
+                <div><span class="hud-value" id="floorUI">01</span> <span style="color:#4e5d78; font-size:14px;">F</span></div>
+                <div class="highscore-box">🏆 KỶ LỤC: <span id="highScoreUI">1</span>F</div>
+            </div>
+
+            <div class="online-list">
+                <div class="list-title"><span>PHÒNG</span> <span id="playerCount">1</span></div>
+                <div id="playerListEntries"></div>
+            </div>
         </div>
 
-        <div class="online-list">
-            <div class="list-title"><span>BẢNG XẾP HẠNG</span> <span id="playerCount" style="color: #fff;">1</span></div>
-            <div id="playerListEntries"></div>
-        </div>
-
-        <div class="controls-hint">
-            Di chuyển: <span class="key-cap">A</span><span class="key-cap">D</span> / <span class="key-cap">◀</span><span class="key-cap">▶</span> | Nhảy: <span class="key-cap">Space</span> / <span class="key-cap">W</span>
+        <!-- Nút bấm điều khiển trên Mobile -->
+        <div id="mobile-controls">
+            <div class="d-pad">
+                <div class="btn-touch" id="btnLeft">◀</div>
+                <div class="btn-touch" id="btnRight">▶</div>
+            </div>
+            <div class="btn-touch btn-jump" id="btnJump">▲</div>
         </div>
     </div>
 
@@ -50,47 +66,43 @@ const socket = io();
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// --- 🛠️ ĐIỀU CHỈNH VẬT LÝ: GIÚP DI CHUYỂN NHẠY VÀ NHẢY CAO HƠN ---
-const gravity = 0.45;       // Giảm trọng lực để nhân vật rơi chậm hơn một chút
-const friction = 0.85;      // Tăng ma sát để di chuyển mượt, phanh chuẩn hơn
+const gravity = 0.45;
+const friction = 0.85;
 
-let player = { 
-    x: 400, y: 500, 
-    width: 24, height: 38, 
-    vx: 0, vy: 0, 
-    isGrounded: false, 
-    color: '#00ffcc', 
-    currentFloor: 1 
-};
+let player = { x: 400, y: 500, width: 24, height: 38, vx: 0, vy: 0, isGrounded: false, color: '#00ffcc', currentFloor: 1 };
 let otherPlayers = {};
 let keys = {};
+let touchKeys = { left: false, right: false, jump: false };
 let cameraY = 0;
 let globalHighestFloor = 1;
 
 let platforms = [];
 let maxGeneratedFloor = 1;
 
-// Khởi tạo nền móng rộng rãi
-platforms.push({ x: 0, y: 580, width: 2000, height: 40, floorNum: 1 });
+// Khởi tạo nền xuất phát an toàn (không có gai)
+platforms.push({ x: 0, y: 580, width: 2000, height: 40, floorNum: 1, hasSpikes: false });
 
-// --- 🛠️ THUẬT TOÁN SINH MAP SIÊU DỄ ---
+// --- THUẬT TOÁN SINH TẦNG DỄ + BẪY GAI NGẪU NHIÊN ---
 function generateFloorsUpTo(targetFloor) {
     while (maxGeneratedFloor < targetFloor + 20) {
         maxGeneratedFloor++;
         let i = maxGeneratedFloor;
-        
-        // 1. Giảm khoảng cách chiều cao giữa các tầng từ 145px xuống còn 90px (Bấm nhảy nhẹ là tới)
         let yPos = 580 - (i - 1) * 90; 
-        
-        // 2. Làm các bậc nhảy to gấp đôi (Rộng từ 180px đến 240px, cực kỳ khó trượt)
         let width = 180 + Math.sin(i * 1.5) * 30; 
-        
-        // 3. Giới hạn vùng xuất hiện gạch ở trung tâm màn hình, không bị lệch ra sát biên
         let xPos = 200 + (Math.cos(i * 2.3) * 120); 
         
-        platforms.push({ x: xPos, y: yPos, width: width, height: 14, floorNum: i });
+        // Tỷ lệ xuất hiện gai trên bậc nhảy là 35% (trừ các tầng mốc 10)
+        let hasSpikes = i % 10 !== 0 && Math.sin(i * 9.8) > 0.3;
+        let spikeX = 0;
+        let spikeWidth = 40; // Độ rộng của cụm gai
+        
+        if (hasSpikes) {
+            // Đặt vị trí bẫy gai ngẫu nhiên nằm gọn trên bề mặt gạch
+            spikeX = xPos + 20 + Math.abs(Math.cos(i)) * (width - 70);
+        }
+        
+        platforms.push({ x: xPos, y: yPos, width: width, height: 14, floorNum: i, hasSpikes, spikeX, spikeWidth });
     }
-    // Xóa bớt gạch cũ quá xa phía dưới để tối ưu hiệu năng bộ nhớ
     platforms = platforms.filter(plat => plat.y < cameraY + 1200);
 }
 
@@ -107,15 +119,27 @@ function updateGameUI() {
     let listHTML = "";
     allPlayers.forEach((p, index) => {
         listHTML += `<div class="player-item">
-            <span>#${index+1} <span class="player-badge" style="background:${p.color}"></span>${p.name}</span>
-            <span style="color:${index===0?'#00ffcc':'#fff'}; font-weight:bold;">F${p.floor}</span>
+            <span><span class="player-badge" style="background:${p.color}"></span>${p.name}</span>
+            <span style="color:#00ffcc; font-weight:bold;">F${p.floor}</span>
         </div>`;
     });
-    document.getElementById("playerCount").innerText = allPlayers.length + " Online";
+    document.getElementById("playerCount").innerText = allPlayers.length;
     document.getElementById("playerListEntries").innerHTML = listHTML;
 }
 
-// Đồng bộ qua Socket.io
+// --- CƠ CHẾ RESET KHI CHẠM GAI ---
+function dieAndReset() {
+    player.x = 400;
+    player.y = 500;
+    player.vx = 0;
+    player.vy = 0;
+    player.currentFloor = 1;
+    player.isGrounded = false;
+    cameraY = player.y - canvas.height / 2;
+    updateGameUI();
+}
+
+// Đồng bộ socket kết nối mạng
 socket.on('currentPlayers', (data) => {
     globalHighestFloor = data.globalHighestFloor;
     Object.keys(data.players).forEach((id) => {
@@ -124,33 +148,24 @@ socket.on('currentPlayers', (data) => {
     });
     updateGameUI();
 });
+socket.on('newPlayer', (p) => { otherPlayers[p.id] = p; updateGameUI(); });
+socket.on('playerMoved', (p) => { if (otherPlayers[p.id]) { otherPlayers[p.id].x = p.x; otherPlayers[p.id].y = p.y; otherPlayers[p.id].currentFloor = p.currentFloor; updateGameUI(); } });
+socket.on('playerDisconnected', (id) => { delete otherPlayers[id]; updateGameUI(); });
+socket.on('newHighScore', (score) => { globalHighestFloor = score; document.getElementById("highScoreUI").innerText = globalHighestFloor; });
 
-socket.on('newPlayer', (playerInfo) => {
-    otherPlayers[playerInfo.id] = playerInfo;
-    updateGameUI();
-});
-
-socket.on('playerMoved', (playerInfo) => {
-    if (otherPlayers[playerInfo.id]) {
-        otherPlayers[playerInfo.id].x = playerInfo.x;
-        otherPlayers[playerInfo.id].y = playerInfo.y;
-        otherPlayers[playerInfo.id].currentFloor = playerInfo.currentFloor;
-        updateGameUI();
-    }
-});
-
-socket.on('playerDisconnected', (id) => {
-    delete otherPlayers[id];
-    updateGameUI();
-});
-
-socket.on('newHighScore', (score) => {
-    globalHighestFloor = score;
-    document.getElementById("highScoreUI").innerText = globalHighestFloor;
-});
-
+// Lắng nghe bàn phím Máy Tính
 window.addEventListener("keydown", e => keys[e.code] = true);
 window.addEventListener("keyup", e => keys[e.code] = false);
+
+// --- LẮNG NGHE SỰ KIỆN CẢM ỨNG ĐIỆN THOẠI ---
+function setupMobileButton(btnId, targetKey) {
+    const btn = document.getElementById(btnId);
+    btn.addEventListener("touchstart", (e) => { e.preventDefault(); touchKeys[targetKey] = true; });
+    btn.addEventListener("touchend", (e) => { e.preventDefault(); touchKeys[targetKey] = false; });
+}
+setupMobileButton("btnLeft", "left");
+setupMobileButton("btnRight", "right");
+setupMobileButton("btnJump", "jump");
 
 function checkCollision(p, plat) {
     return p.x < plat.x + plat.width && p.x + p.width > plat.x &&
@@ -158,12 +173,10 @@ function checkCollision(p, plat) {
 }
 
 function gameLoop() {
-    // Tăng nhẹ lực đẩy khi bấm phím để di chuyển nhanh nhạy hơn
-    if (keys["ArrowRight"] || keys["KeyD"]) player.vx += 0.85;
-    if (keys["ArrowLeft"] || keys["KeyA"]) player.vx -= 0.85;
-    
-    // Giữ nguyên lực nhảy mạnh (-11.5) trên nền trọng lực nhẹ hơn -> Nhảy siêu cao
-    if ((keys["Space"] || keys["ArrowUp"] || keys["KeyW"]) && player.isGrounded) {
+    // Kết hợp cả nút bấm máy tính và cảm ứng điện thoại
+    if (keys["ArrowRight"] || keys["KeyD"] || touchKeys.right) player.vx += 0.85;
+    if (keys["ArrowLeft"] || keys["KeyA"] || touchKeys.left) player.vx -= 0.85;
+    if ((keys["Space"] || keys["ArrowUp"] || keys["KeyW"] || touchKeys.jump) && player.isGrounded) {
         player.vy = -11.5;
         player.isGrounded = false;
     }
@@ -179,11 +192,24 @@ function gameLoop() {
     let oldFloor = player.currentFloor;
 
     for (let plat of platforms) {
+        // 1. Kiểm tra va chạm đứng trên mặt gạch
         if (checkCollision(player, plat)) {
             player.y = plat.y - player.height;
             player.vy = 0;
             player.isGrounded = true;
             if(plat.floorNum > player.currentFloor) player.currentFloor = plat.floorNum;
+        }
+
+        // 2. KIỂM TRA VA CHẠM BẪY GAI (NẾU CHẠM = CHẾT)
+        if (plat.hasSpikes && player.currentFloor >= plat.floorNum - 1) {
+            let spikeTop = plat.y - 12; // Chiều cao gai là 12px
+            if (player.x + player.width > plat.spikeX && 
+                player.x < plat.spikeX + plat.spikeWidth &&
+                player.y + player.height >= spikeTop && 
+                player.y <= plat.y) {
+                dieAndReset(); // Thực hiện lệnh chết, đưa về tầng 1
+                break;
+            }
         }
     }
 
@@ -197,11 +223,12 @@ function gameLoop() {
 
     socket.emit('playerMovement', { x: player.x, y: player.y, currentFloor: player.currentFloor });
 
-    // Vẽ đồ họa
+    // --- VẼ ĐỒ HỌA CANVASES ---
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
     ctx.translate(0, -cameraY);
 
+    // Vẽ nền lưới
     ctx.strokeStyle = "rgba(0, 255, 204, 0.015)";
     ctx.lineWidth = 1;
     let startGridY = Math.floor(cameraY / 40) * 40;
@@ -209,14 +236,32 @@ function gameLoop() {
         ctx.beginPath(); ctx.moveTo(0, gY); ctx.lineTo(canvas.width, gY); ctx.stroke();
     }
 
+    // Vẽ gạch và vẽ gai
     platforms.forEach(plat => {
         if (plat.y > cameraY - 100 && plat.y < cameraY + canvas.height + 100) {
             let isMilestone = plat.floorNum % 50 === 0;
-            ctx.shadowBlur = isMilestone ? 18 : 6;
-            ctx.shadowColor = isMilestone ? "#ff0055" : "#00ffcc";
-            ctx.fillStyle = isMilestone ? "rgba(255, 0, 85, 0.95)" : "rgba(0, 255, 204, 0.75)";
+            ctx.fillStyle = isMilestone ? "rgba(255, 0, 85, 0.85)" : "rgba(0, 255, 204, 0.65)";
             ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
-            ctx.shadowBlur = 0;
+
+            // VẼ BẪY GAI MÀU ĐỎ NEON NẾU CÓ
+            if (plat.hasSpikes) {
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = "#ff3333";
+                ctx.fillStyle = "#ff3355";
+                
+                // Vẽ cụm gai hình tam giác nhọn hoắt
+                ctx.beginPath();
+                let spikeCount = 4;
+                let singleSpikeWidth = plat.spikeWidth / spikeCount;
+                for (let s = 0; s < spikeCount; s++) {
+                    let sX = plat.spikeX + (s * singleSpikeWidth);
+                    ctx.moveTo(sX, plat.y);
+                    ctx.lineTo(sX + singleSpikeWidth / 2, plat.y - 12); // Đỉnh gai
+                    ctx.lineTo(sX + singleSpikeWidth, plat.y);
+                }
+                ctx.fill();
+                ctx.shadowBlur = 0; // Reset bóng sáng
+            }
 
             ctx.fillStyle = "rgba(255,255,255,0.2)";
             ctx.font = "bold 9px Orbitron";
@@ -224,6 +269,7 @@ function gameLoop() {
         }
     });
 
+    // Vẽ những người chơi trực tuyến khác
     Object.keys(otherPlayers).forEach((id) => {
         let p = otherPlayers[id];
         ctx.fillStyle = p.color;
@@ -235,6 +281,7 @@ function gameLoop() {
         ctx.textAlign = "left";
     });
 
+    // Vẽ chính bạn
     ctx.fillStyle = player.color;
     ctx.fillRect(player.x, player.y, player.width, player.height);
     ctx.strokeStyle = "#ffffff";
