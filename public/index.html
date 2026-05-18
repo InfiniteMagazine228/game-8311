@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none, minimal-ui">
-    <title>Cyber Parkour Vô Tận - Chuẩn Hóa Mobile</title>
+    <title>Cyber Parkour Vô Tận - Cố Định Nút Bấm</title>
     <link href="https://googleapis.com" rel="stylesheet">
     <style>
         body { margin: 0; background: #070714; overflow: hidden; font-family: 'Rajdhani', sans-serif; user-select: none; touch-action: none; -webkit-touch-callout: none; }
@@ -20,7 +20,7 @@
         .player-item { font-size: 13px; color: #fff; padding: 3px 0; display: flex; justify-content: space-between; }
         .player-badge { width: 6px; height: 6px; border-radius: 50%; display: inline-block; margin-right: 5px; }
 
-        /* --- 🛠️ ÉP BUỘC HIỂN THỊ NÚT BẤM CẢM ỨNG CỐ ĐỊNH 100% --- */
+        /* --- 🛠️ KHUNG NÚT BẤM BẮT BUỘC HIỂN THỊ TRÊN MỌI THIẾT BỊ --- */
         #mobile-controls { 
             position: absolute; 
             bottom: 30px; 
@@ -30,14 +30,14 @@
             justify-content: space-between; 
             padding: 0 30px; 
             box-sizing: border-box; 
-            pointer-events: auto; /* Kích hoạt nhận tương tác chạm */
+            pointer-events: auto; 
             z-index: 999;
         }
         .d-pad { display: flex; gap: 20px; }
         .btn-touch { 
             width: 75px; 
             height: 75px; 
-            background: rgba(15, 15, 35, 0.75); 
+            background: rgba(15, 15, 35, 0.8); 
             border: 3px solid #00ffcc; 
             border-radius: 50%; 
             display: flex; 
@@ -50,6 +50,7 @@
             box-shadow: 0 0 15px rgba(0, 255, 204, 0.3);
             -webkit-user-select: none;
             user-select: none;
+            cursor: pointer;
         }
         .btn-touch:active { 
             background: rgba(0, 255, 204, 0.4); 
@@ -88,7 +89,7 @@
             </div>
         </div>
 
-        <!-- Khung nút ảo di chuyển -->
+        <!-- Các nút bấm luôn luôn xuất hiện -->
         <div id="mobile-controls">
             <div class="d-pad">
                 <div class="btn-touch" id="btnLeft">◀</div>
@@ -205,23 +206,23 @@ socket.on('playerMoved', (p) => { if (otherPlayers[p.id]) { otherPlayers[p.id].x
 socket.on('playerDisconnected', (id) => { delete otherPlayers[id]; updateGameUI(); });
 socket.on('newHighScore', (score) => { globalHighestFloor = score; document.getElementById("highScoreUI").innerText = globalHighestFloor; });
 
-// Bàn phím máy tính
+// Nhận phím máy tính
 window.addEventListener("keydown", e => keys[e.code] = true);
 window.addEventListener("keyup", e => keys[e.code] = false);
 
-// Thiết lập nhận chuột lẫn chạm trên Mobile để ứng dụng đóng gói nhận diện mượt mà
+// Nhận đồng thời cả sự kiện Touch (Mobile) và Mouse (PC giả lập trên AppsGeyser)
 function setupMobileButton(btnId, targetKey) {
     const btn = document.getElementById(btnId);
     
-    // Sự kiện chạm màn hình điện thoại
+    // Hỗ trợ màn hình cảm ứng cảm ứng
     btn.addEventListener("touchstart", (e) => { e.preventDefault(); touchKeys[targetKey] = true; if (navigator.vibrate) navigator.vibrate(15); }, { passive: false });
     btn.addEventListener("touchend", (e) => { e.preventDefault(); touchKeys[targetKey] = false; }, { passive: false });
     btn.addEventListener("touchcancel", (e) => { e.preventDefault(); touchKeys[targetKey] = false; }, { passive: false });
     
-    // Bổ sung sự kiện Click chuột (Đề phòng phần mềm AppGeyser quét dạng máy tính)
-    btn.addEventListener("mousedown", () => { touchKeys[targetKey] = true; });
-    btn.addEventListener("mouseup", () => { touchKeys[targetKey] = false; });
-    btn.addEventListener("mouseleave", () => { touchKeys[targetKey] = false; });
+    // Hỗ trợ click chuột bám giữ đà
+    btn.addEventListener("mousedown", (e) => { e.preventDefault(); touchKeys[targetKey] = true; });
+    btn.addEventListener("mouseup", (e) => { e.preventDefault(); touchKeys[targetKey] = false; });
+    btn.addEventListener("mouseleave", (e) => { touchKeys[targetKey] = false; });
 }
 
 setupMobileButton("btnLeft", "left");
