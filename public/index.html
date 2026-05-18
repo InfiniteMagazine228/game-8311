@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none, minimal-ui">
-    <title>Cyber Parkour Vô Tận - Bản Chuẩn Khắc Phục Màn Hình Đen</title>
+    <title>Cyber Parkour Vô Tận - Khoảng Cách Chuẩn</title>
     <link href="https://googleapis.com" rel="stylesheet">
     <style>
         body { margin: 0; background: #070714; overflow: hidden; font-family: 'Rajdhani', sans-serif; user-select: none; touch-action: none; -webkit-touch-callout: none; position: relative; width: 100vw; height: 100vh; }
@@ -100,10 +100,8 @@
 </head>
 <body>
 
-    <!-- KHUNG VẼ ĐỒ HỌA GAME -->
     <canvas id="gameCanvas" width="800" height="600"></canvas>
 
-    <!-- LỚP HUD ĐỀM TRÊN MÀN HÌNH -->
     <div id="game-ui">
         <div>
             <div class="hud-panel">
@@ -154,9 +152,12 @@ function generateFloorsUpTo(targetFloor) {
         maxGeneratedFloor++;
         let i = maxGeneratedFloor;
         
-        let yPos = 580 - (i - 1) * 70; 
-        let width = 320 + Math.sin(i * 1.5) * 30; 
-        let xPos = 240 + (Math.cos(i * 2) * 50); 
+        // 🛠️ ĐIỀU CHỈNH KHOẢNG CÁCH: Đổi khoảng cách tầng từ 70px lên 105px (Vừa đủ tầm nhảy của mẹ/bạn)
+        let yPos = 580 - (i - 1) * 105; 
+        
+        // Giữ nguyên độ rộng khối gạch lớn (260px - 320px) để dễ tiếp đất
+        let width = 260 + Math.sin(i * 1.5) * 30; 
+        let xPos = 240 + (Math.cos(i * 2) * 80); 
         
         let type = 'normal';
         let moveSpeed = 0;
@@ -169,7 +170,7 @@ function generateFloorsUpTo(targetFloor) {
             moveSpeed = 0.7; 
         } else if (rand >= 0.15 && rand < 0.3) {
             type = 'spring'; 
-            width = 220; 
+            width = 200; 
         } else if (rand >= 0.3 && rand < 0.5) {
             type = 'ice'; 
         }
@@ -184,7 +185,9 @@ function generateFloorsUpTo(targetFloor) {
             hasSpikes, spikeX, spikeWidth
         });
     }
-    platforms = platforms.filter(plat => plat.floorNum === 1 || plat.y < cameraY + 1200);
+    if (player.currentFloor > 5) {
+        platforms = platforms.filter(plat => plat.floorNum === 1 || plat.y < cameraY + 1200);
+    }
 }
 
 function updateGameUI() {
@@ -209,11 +212,21 @@ function updateGameUI() {
 }
 
 function dieAndReset() {
-    player.x = 400; player.y = 500; player.vx = 0; player.vy = 0;
-    player.currentFloor = 1; player.isGrounded = false;
+    player.x = 400; 
+    player.y = 500; 
+    player.vx = 0; 
+    player.vy = 0;
+    player.currentFloor = 1; 
+    player.isGrounded = false;
     speedMultiplier = 1.0;
-    if (!platforms.some(p => p.floorNum === 1)) platforms.push(groundPlatform);
+    
+    platforms = [];
+    maxGeneratedFloor = 1;
+    platforms.push(groundPlatform);
+    
     cameraY = player.y - canvas.height / 2 - 50; 
+    
+    generateFloorsUpTo(1);
     updateGameUI();
 }
 
@@ -249,9 +262,13 @@ setupMobileButton("btnLeft", "left");
 setupMobileButton("btnRight", "right");
 setupMobileButton("btnJump", "jump");
 
+// 🛠️ ĐIỀU CHỈNH VA CHẠM KHỚP ĐỘ CAO MỚI: Tăng nhẹ khoảng quét va chạm lên 10px để tiếp đất êm ái hơn
 function checkCollision(p, plat) {
-    return p.x < plat.x + plat.width && p.x + p.width > plat.x &&
-           p.y + p.height >= plat.y && p.y + p.height <= plat.y + plat.height && p.vy >= 0;
+    return p.x < plat.x + plat.width && 
+           p.x + p.width > plat.x &&
+           p.y + p.height >= plat.y && 
+           p.y + p.height <= plat.y + 10 && 
+           p.vy >= 0;
 }
 
 function gameLoop() {
@@ -260,7 +277,7 @@ function gameLoop() {
     if (keys["ArrowRight"] || keys["KeyD"] || touchKeys.right) player.vx += moveForce;
     if (keys["ArrowLeft"] || keys["KeyA"] || touchKeys.left) player.vx -= moveForce;
     if ((keys["Space"] || keys["ArrowUp"] || keys["KeyW"] || touchKeys.jump) && player.isGrounded) {
-        player.vy = -10.5; 
+        player.vy = -11.0; // 🛠️ TĂNG NHẸ LỰC NHẢY: Lên -11.0 để nhân vật bay cao vừa vặn thoải mái với độ giãn tầng mới
         player.isGrounded = false;
     }
 
@@ -290,8 +307,8 @@ function gameLoop() {
             if(plat.floorNum > player.currentFloor) player.currentFloor = plat.floorNum;
 
             if (plat.type === 'moving') player.x += plat.moveSpeed * plat.direction;
-            if (plat.type === 'spring') { player.vy = -15; player.isGrounded = false; }
             if (plat.type === 'ice') { standingOnIce = true; }
+            if (plat.type === 'spring') { player.vy = -16.5; player.isGrounded = false; } // Tăng nhẹ lực lò xo
         }
 
         if (plat.hasSpikes && player.currentFloor >= plat.floorNum - 1) {
@@ -331,13 +348,13 @@ function gameLoop() {
     ctx.save();
     ctx.translate(0, -cameraY);
 
-    // Lưới nền mờ
+    // Lưới nền
     ctx.strokeStyle = "rgba(0, 255, 204, 0.01)";
     ctx.lineWidth = 1;
     let startGridY = Math.floor(cameraY / 40) * 40;
     for (let gY = startGridY; gY < startGridY + canvas.height + 40; gY += 40) {
         ctx.beginPath(); ctx.moveTo(0, gY); ctx.lineTo(canvas.width, gY); 
-        ctx.stroke(); // 🛠️ ĐÃ SỬA LỖI ĐÁNG TIẾC: Thêm chính xác lệnh ctx.stroke() để chạy mượt mà
+        ctx.stroke(); 
     }
 
     platforms.forEach(plat => {
