@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-select=none">
-    <title>Cyber Parkour Vô Tận - Khối Đặc Biệt</title>
+    <title>Cyber Parkour Vô Tận - Đã Sửa Lỗi Chết Rơi Tự Do</title>
     <link href="https://googleapis.com" rel="stylesheet">
     <style>
         body { margin: 0; background: #070714; overflow: hidden; font-family: 'Rajdhani', sans-serif; user-select: none; touch-action: none; }
@@ -64,7 +64,7 @@ const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
 const gravity = 0.45;
-let currentFriction = 0.85; // Biến ma sát động (thay đổi khi đứng trên băng)
+let currentFriction = 0.85;
 
 let player = { x: 400, y: 500, width: 24, height: 38, vx: 0, vy: 0, isGrounded: false, color: '#00ffcc', currentFloor: 1 };
 let otherPlayers = {};
@@ -76,10 +76,10 @@ let globalHighestFloor = 1;
 let platforms = [];
 let maxGeneratedFloor = 1;
 
-// Khởi tạo nền xuất phát tĩnh
-platforms.push({ x: 0, y: 580, width: 2000, height: 40, floorNum: 1, type: 'normal', hasSpikes: false });
+// Khởi tạo nền đất xuất phát
+const groundPlatform = { x: -600, y: 580, width: 3000, height: 40, floorNum: 1, type: 'normal', hasSpikes: false };
+platforms.push(groundPlatform);
 
-// --- THUẬT TOÁN SINH TẦNG ĐA DẠNG KHỐI CHỨC NĂNG ---
 function generateFloorsUpTo(targetFloor) {
     while (maxGeneratedFloor < targetFloor + 20) {
         maxGeneratedFloor++;
@@ -88,28 +88,26 @@ function generateFloorsUpTo(targetFloor) {
         let width = 180 + Math.sin(i * 1.5) * 30; 
         let xPos = 200 + (Math.cos(i * 2.3) * 120); 
         
-        // Phân loại khối (Mặc định normal, chia ngẫu nhiên dựa trên số tầng)
         let type = 'normal';
         let moveSpeed = 0;
         let moveRange = 100;
         let startX = xPos;
 
         if (i % 10 === 0) {
-            type = 'checkpoint'; // Tầng mốc an toàn
+            type = 'checkpoint';
         } else {
             let rand = Math.random();
             if (rand < 0.2) {
-                type = 'moving'; // Khối di chuyển
-                moveSpeed = 1.5 + Math.sin(i) * 1.0; // Tốc độ di chuyển ngẫu nhiên
+                type = 'moving';
+                moveSpeed = 1.5 + Math.sin(i) * 1.0;
             } else if (rand >= 0.2 && rand < 0.35) {
-                type = 'spring'; // Khối lò xo siêu nảy
-                width = 120; // Khối lò xo thu nhỏ lại một chút
+                type = 'spring';
+                width = 120;
             } else if (rand >= 0.35 && rand < 0.5) {
-                type = 'ice'; // Khối băng trơn trượt
+                type = 'ice';
             }
         }
 
-        // Chỉ tạo gai trên khối thường hoặc khối băng, không tạo trên lò xo/khối di chuyển
         let hasSpikes = (type === 'normal' || type === 'ice') && Math.sin(i * 9.8) > 0.4;
         let spikeX = xPos + 30 + Math.random() * (width - 80);
         let spikeWidth = 40;
@@ -120,7 +118,8 @@ function generateFloorsUpTo(targetFloor) {
             hasSpikes, spikeX, spikeWidth 
         });
     }
-    platforms = platforms.filter(plat => plat.y < cameraY + 1200);
+    // 🛠️ SỬA LỖI: Lọc dọn rác nhưng luôn bảo lưu vĩnh viễn nền đất tầng 1 (floorNum !== 1)
+    platforms = platforms.filter(plat => plat.floorNum === 1 || plat.y < cameraY + 1200);
 }
 
 function updateGameUI() {
@@ -144,15 +143,26 @@ function updateGameUI() {
     document.getElementById("playerListEntries").innerHTML = listHTML;
 }
 
+// 🛠️ SỬA LỖI: Hàm xử lý hồi sinh thông minh khóa camera lập tức
 function dieAndReset() {
-    player.x = 400; player.y = 500; player.vx = 0; player.vy = 0;
-    player.currentFloor = 1; player.isGrounded = false;
+    player.x = 400; 
+    player.y = 500; 
+    player.vx = 0; 
+    player.vy = 0;
+    player.currentFloor = 1; 
+    player.isGrounded = false;
     currentFriction = 0.85;
-    cameraY = player.y - canvas.height / 2;
+    
+    // Đảm bảo nền móng tầng 1 tồn tại trong danh sách gạch
+    if (!platforms.some(p => p.floorNum === 1)) {
+        platforms.push(groundPlatform);
+    }
+    
+    // Ép camera nhảy ngay lập tức về vị trí xuất phát, tránh bị trễ khung hình gây rơi tự do
+    cameraY = player.y - canvas.height / 2 - 50; 
     updateGameUI();
 }
 
-// Hệ thống Socket mạng
 socket.on('currentPlayers', (data) => {
     globalHighestFloor = data.globalHighestFloor;
     Object.keys(data.players).forEach((id) => {
@@ -191,7 +201,6 @@ function gameLoop() {
         player.isGrounded = false;
     }
 
-    // Áp dụng ma sát động
     player.vx *= currentFriction;
     player.vy += gravity;
     player.x += player.vx;
@@ -199,45 +208,29 @@ function gameLoop() {
 
     generateFloorsUpTo(player.currentFloor);
 
-    // Mặc định trả lại ma sát thông thường, nếu đứng trên băng sẽ bị ghi đè
     let standingOnIce = false;
     player.isGrounded = false;
     let oldFloor = player.currentFloor;
 
     for (let plat of platforms) {
-        // Cập nhật vị trí các khối di chuyển trước khi tính va chạm
         if (plat.type === 'moving') {
             plat.x += plat.moveSpeed * plat.direction;
             if (plat.x > plat.startX + plat.moveRange || plat.x < plat.startX - plat.moveRange) {
-                plat.direction *= -1; // Đảo chiều di chuyển
+                plat.direction *= -1;
             }
         }
 
-        // Kiểm tra va chạm đứng trên khối
         if (checkCollision(player, plat)) {
             player.y = plat.y - player.height;
             player.vy = 0;
             player.isGrounded = true;
             if(plat.floorNum > player.currentFloor) player.currentFloor = plat.floorNum;
 
-            // XỬ LÝ KHI ĐỨNG TRÊN KHỐI DI CHUYỂN: Kéo nhân vật đi theo khối
-            if (plat.type === 'moving') {
-                player.x += plat.moveSpeed * plat.direction;
-            }
-            
-            // XỬ LÝ KHI GIẪM LÊN KHỐI LÒ XO: Bật nhảy cực đại tự động
-            if (plat.type === 'spring') {
-                player.vy = -18; // Lực nảy siêu cao
-                player.isGrounded = false;
-            }
-
-            // XỬ LÝ KHỐI BĂNG: Giảm ma sát để tạo hiệu ứng trượt
-            if (plat.type === 'ice') {
-                standingOnIce = true;
-            }
+            if (plat.type === 'moving') player.x += plat.moveSpeed * plat.direction;
+            if (plat.type === 'spring') { player.vy = -18; player.isGrounded = false; }
+            if (plat.type === 'ice') standingOnIce = true;
         }
 
-        // Kiểm tra va chạm bẫy gai
         if (plat.hasSpikes && player.currentFloor >= plat.floorNum - 1) {
             let spikeTop = plat.y - 12;
             let currentSpikeX = plat.hasSpikes ? plat.spikeX : 0;
@@ -250,7 +243,11 @@ function gameLoop() {
         }
     }
 
-    // Thay đổi độ ma sát tùy thuộc nền đất
+    // 🛠️ SỬA LỖI bổ sung: Rơi xuống hố sâu ngoài màn hình (nếu nhảy trượt khối) cũng tự động reset về tầng 1
+    if (player.y > cameraY + canvas.height + 150) {
+        dieAndReset();
+    }
+
     currentFriction = standingOnIce ? 0.98 : 0.85; 
 
     if (player.currentFloor !== oldFloor) updateGameUI();
@@ -263,12 +260,10 @@ function gameLoop() {
 
     socket.emit('playerMovement', { x: player.x, y: player.y, currentFloor: player.currentFloor });
 
-    // --- VẼ ĐỒ HỌA CANVASES ---
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
     ctx.translate(0, -cameraY);
 
-    // Vẽ lưới nền
     ctx.strokeStyle = "rgba(0, 255, 204, 0.015)";
     ctx.lineWidth = 1;
     let startGridY = Math.floor(cameraY / 40) * 40;
@@ -276,51 +271,28 @@ function gameLoop() {
         ctx.beginPath(); ctx.moveTo(0, gY); ctx.lineTo(canvas.width, gY); ctx.stroke();
     }
 
-    // Vẽ các loại khối đặc biệt
     platforms.forEach(plat => {
         if (plat.y > cameraY - 100 && plat.y < cameraY + canvas.height + 100) {
-            
-            // Chọn màu và hiệu ứng dựa trên loại khối
-            if (plat.type === 'checkpoint') {
-                ctx.shadowBlur = 15; ctx.shadowColor = "#ff0055";
-                ctx.fillStyle = "rgba(255, 0, 85, 0.95)";
-            } else if (plat.type === 'moving') {
-                ctx.shadowBlur = 10; ctx.shadowColor = "#cc33ff";
-                ctx.fillStyle = "rgba(204, 51, 255, 0.85)"; // Khối di chuyển màu Tím
-            } else if (plat.type === 'spring') {
-                ctx.shadowBlur = 12; ctx.shadowColor = "#ffcc00";
-                ctx.fillStyle = "rgba(255, 204, 0, 0.9)"; // Khối lò xo màu Vàng
-            } else if (plat.type === 'ice') {
-                ctx.shadowBlur = 8; ctx.shadowColor = "#00ccff";
-                ctx.fillStyle = "rgba(0, 204, 255, 0.8)"; // Khối băng màu Xanh Tuyết
-            } else {
-                ctx.shadowBlur = 5; ctx.shadowColor = "#00ffcc";
-                ctx.fillStyle = "rgba(0, 255, 204, 0.65)"; // Khối thường màu Cyan
-            }
+            if (plat.type === 'checkpoint') { ctx.shadowBlur = 15; ctx.shadowColor = "#ff0055"; ctx.fillStyle = "rgba(255, 0, 85, 0.95)"; }
+            else if (plat.type === 'moving') { ctx.shadowBlur = 10; ctx.shadowColor = "#cc33ff"; ctx.fillStyle = "rgba(204, 51, 255, 0.85)"; }
+            else if (plat.type === 'spring') { ctx.shadowBlur = 12; ctx.shadowColor = "#ffcc00"; ctx.fillStyle = "rgba(255, 204, 0, 0.9)"; }
+            else if (plat.type === 'ice') { ctx.shadowBlur = 8; ctx.shadowColor = "#00ccff"; ctx.fillStyle = "rgba(0, 204, 255, 0.8)"; }
+            else { ctx.shadowBlur = 5; ctx.shadowColor = "#00ffcc"; ctx.fillStyle = "rgba(0, 255, 204, 0.65)"; }
             
             ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
             ctx.shadowBlur = 0;
 
-            // Nếu là khối lò xo, vẽ thêm các vạch lò xo phía trên bề mặt
-            if (plat.type === 'spring') {
-                ctx.fillStyle = "#ffffff";
-                ctx.fillRect(plat.x + 10, plat.y - 4, plat.width - 20, 4);
-            }
+            if (plat.type === 'spring') { ctx.fillStyle = "#ffffff"; ctx.fillRect(plat.x + 10, plat.y - 4, plat.width - 20, 4); }
 
-            // Vẽ bẫy gai nếu có
             if (plat.hasSpikes) {
-                ctx.shadowBlur = 10; ctx.shadowColor = "#ff3333";
-                ctx.fillStyle = "#ff3355";
+                ctx.shadowBlur = 10; ctx.shadowColor = "#ff3333"; ctx.fillStyle = "#ff3355";
                 ctx.beginPath();
                 let spikeCount = 4;
                 let singleSpikeWidth = plat.spikeWidth / spikeCount;
                 for (let s = 0; s < spikeCount; s++) {
                     let sX = (plat.type === 'moving' ? plat.x + (plat.width - plat.spikeWidth)/2 : plat.spikeX) + (s * singleSpikeWidth);
-                    // Cập nhật tọa độ gai đi theo gạch nếu là gạch di chuyển
                     if(plat.type === 'moving') plat.spikeX = plat.x + (plat.width - plat.spikeWidth)/2;
-                    ctx.moveTo(sX, plat.y);
-                    ctx.lineTo(sX + singleSpikeWidth / 2, plat.y - 12);
-                    ctx.lineTo(sX + singleSpikeWidth, plat.y);
+                    ctx.moveTo(sX, plat.y); ctx.lineTo(sX + singleSpikeWidth / 2, plat.y - 12); ctx.lineTo(sX + singleSpikeWidth, plat.y);
                 }
                 ctx.fill();
                 ctx.shadowBlur = 0;
@@ -332,7 +304,6 @@ function gameLoop() {
         }
     });
 
-    // Vẽ người chơi khác
     Object.keys(otherPlayers).forEach((id) => {
         let p = otherPlayers[id];
         ctx.fillStyle = p.color;
@@ -344,7 +315,6 @@ function gameLoop() {
         ctx.textAlign = "left";
     });
 
-    // Vẽ chính bạn
     ctx.fillStyle = player.color;
     ctx.fillRect(player.x, player.y, player.width, player.height);
     ctx.strokeStyle = "#ffffff";
