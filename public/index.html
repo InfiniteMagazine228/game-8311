@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cyber Parkour Vô Tận - Multiplayer</title>
+    <title>Cyber Parkour Vô Tận - Chế Độ Dễ</title>
     <link href="https://googleapis.com" rel="stylesheet">
     <style>
         body { margin: 0; background: #070714; overflow: hidden; font-family: 'Rajdhani', sans-serif; user-select: none; }
@@ -22,7 +22,6 @@
         .controls-hint { position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.7); padding: 8px 20px; border-radius: 20px; color: #8892b0; font-size: 14px; }
         .key-cap { background: #333; color: #fff; padding: 2px 6px; border-radius: 4px; margin: 0 2px; font-family: monospace; }
     </style>
-    <!-- Tự động tải từ server cùng nguồn -->
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
@@ -47,15 +46,22 @@
     <canvas id="gameCanvas" width="800" height="600"></canvas>
 
 <script>
-// QUAN TRỌNG: Để trống ngoặc giúp tự động nhận diện chính xác domain trên Cloud (Railway)
 const socket = io(); 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-const gravity = 0.5;
-const friction = 0.8;
+// --- 🛠️ ĐIỀU CHỈNH VẬT LÝ: GIÚP DI CHUYỂN NHẠY VÀ NHẢY CAO HƠN ---
+const gravity = 0.45;       // Giảm trọng lực để nhân vật rơi chậm hơn một chút
+const friction = 0.85;      // Tăng ma sát để di chuyển mượt, phanh chuẩn hơn
 
-let player = { x: 400, y: 500, width: 24, height: 38, vx: 0, vy: 0, isGrounded: false, color: '#00ffcc', currentFloor: 1 };
+let player = { 
+    x: 400, y: 500, 
+    width: 24, height: 38, 
+    vx: 0, vy: 0, 
+    isGrounded: false, 
+    color: '#00ffcc', 
+    currentFloor: 1 
+};
 let otherPlayers = {};
 let keys = {};
 let cameraY = 0;
@@ -64,17 +70,23 @@ let globalHighestFloor = 1;
 let platforms = [];
 let maxGeneratedFloor = 1;
 
-// Khởi tạo nền móng
+// Khởi tạo nền móng rộng rãi
 platforms.push({ x: 0, y: 580, width: 2000, height: 40, floorNum: 1 });
 
-// Thuật toán sinh tầng động
+// --- 🛠️ THUẬT TOÁN SINH MAP SIÊU DỄ ---
 function generateFloorsUpTo(targetFloor) {
     while (maxGeneratedFloor < targetFloor + 20) {
         maxGeneratedFloor++;
         let i = maxGeneratedFloor;
-        let yPos = 580 - (i - 1) * 145;
-        let width = 95 + Math.sin(i * 1.5) * 25; 
-        let xPos = 180 + (Math.cos(i * 2.3) * 240) + 180;
+        
+        // 1. Giảm khoảng cách chiều cao giữa các tầng từ 145px xuống còn 90px (Bấm nhảy nhẹ là tới)
+        let yPos = 580 - (i - 1) * 90; 
+        
+        // 2. Làm các bậc nhảy to gấp đôi (Rộng từ 180px đến 240px, cực kỳ khó trượt)
+        let width = 180 + Math.sin(i * 1.5) * 30; 
+        
+        // 3. Giới hạn vùng xuất hiện gạch ở trung tâm màn hình, không bị lệch ra sát biên
+        let xPos = 200 + (Math.cos(i * 2.3) * 120); 
         
         platforms.push({ x: xPos, y: yPos, width: width, height: 14, floorNum: i });
     }
@@ -146,8 +158,11 @@ function checkCollision(p, plat) {
 }
 
 function gameLoop() {
-    if (keys["ArrowRight"] || keys["KeyD"]) player.vx += 0.75;
-    if (keys["ArrowLeft"] || keys["KeyA"]) player.vx -= 0.75;
+    // Tăng nhẹ lực đẩy khi bấm phím để di chuyển nhanh nhạy hơn
+    if (keys["ArrowRight"] || keys["KeyD"]) player.vx += 0.85;
+    if (keys["ArrowLeft"] || keys["KeyA"]) player.vx -= 0.85;
+    
+    // Giữ nguyên lực nhảy mạnh (-11.5) trên nền trọng lực nhẹ hơn -> Nhảy siêu cao
     if ((keys["Space"] || keys["ArrowUp"] || keys["KeyW"]) && player.isGrounded) {
         player.vy = -11.5;
         player.isGrounded = false;
