@@ -2,18 +2,195 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <title>Parkour 300 Tầng - Multiplayer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyber Parkour 300 Tầng - Multiplayer</title>
+    <!-- Nhúng Font chữ phong cách tương lai từ Google Fonts -->
+    <link href="https://googleapis.com" rel="stylesheet">
     <style>
-        body { margin: 0; background: #111; overflow: hidden; font-family: sans-serif; }
-        canvas { display: block; background: #1a1a2e; margin: 0 auto; }
-        #ui { position: absolute; top: 10px; left: 10px; color: white; font-size: 18px; pointer-events: none; }
+        /* --- ĐỊNH DẠNG GIAO DIỆN CHUNG --- */
+        body { 
+            margin: 0; 
+            background: #0b0b16; 
+            overflow: hidden; 
+            font-family: 'Rajdhani', sans-serif;
+            user-select: none;
+        }
+        
+        canvas { 
+            display: block; 
+            background: radial-gradient(circle, #1a1a3a 0%, #070714 100%); 
+            margin: 0 auto;
+            box-shadow: 0 0 50px rgba(0, 255, 204, 0.15);
+        }
+
+        /* --- LỚP UI PHỦ PHÍA TRÊN GAME --- */
+        #game-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none; /* Giúp không bị đè lên tương tác chuột click vào canvas */
+            box-sizing: border-box;
+            padding: 25px;
+        }
+
+        /* Khung hiển thị Tầng Hiện Tại (Góc trên bên trái) */
+        .floor-counter {
+            background: rgba(15, 15, 35, 0.75);
+            border-left: 5px solid #00ffcc;
+            border-right: 1px solid rgba(0, 255, 204, 0.2);
+            border-top: 1px solid rgba(0, 255, 204, 0.2);
+            border-bottom: 1px solid rgba(0, 255, 204, 0.2);
+            padding: 12px 25px;
+            display: inline-block;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+        }
+        .floor-label {
+            font-size: 14px;
+            color: #8892b0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 700;
+        }
+        .floor-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 38px;
+            font-weight: 900;
+            color: #00ffcc;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.6);
+        }
+        .floor-total {
+            font-size: 16px;
+            color: #4e5d78;
+        }
+
+        /* Bảng danh sách người chơi Online (Góc trên bên phải) */
+        .online-list {
+            position: absolute;
+            top: 25px;
+            right: 25px;
+            background: rgba(15, 15, 35, 0.75);
+            border: 1px solid rgba(255, 51, 102, 0.2);
+            border-right: 5px solid #ff3366;
+            padding: 15px;
+            width: 200px;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+        }
+        .list-title {
+            font-size: 14px;
+            color: #ff3366;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 10px;
+            font-weight: 700;
+            border-bottom: 1px solid rgba(255, 51, 102, 0.2);
+            padding-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        .player-item {
+            font-size: 15px;
+            color: #fff;
+            padding: 4px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .player-badge {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+
+        /* Thanh Tiến Trình Leo Tháp (Bên cạnh màn hình) */
+        .progress-bar-container {
+            position: absolute;
+            left: 25px;
+            bottom: 40px;
+            top: 150px;
+            width: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+        .progress-fill {
+            width: 100%;
+            height: 0%;
+            background: linear-gradient(to top, #ff3366, #00ffcc);
+            border-radius: 4px;
+            box-shadow: 0 0 15px #00ffcc;
+            transition: height 0.3s ease;
+        }
+
+        /* Hướng dẫn nút bấm (Dưới cùng màn hình) */
+        .controls-hint {
+            position: absolute;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #8892b0;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+        .key-cap {
+            background: #333;
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            border-bottom: 2px solid #111;
+            margin: 0 2px;
+        }
     </style>
     <!-- Tự động tải thư viện kết nối mạng Socket.io từ Server -->
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
 
-    <div id="ui">Tầng hiện tại: <span id="floorUI">1</span>/300</div>
+    <!-- LỚP GIAO DIỆN UI ĐẸP MẮT -->
+    <div id="game-ui">
+        <!-- Đếm tầng -->
+        <div class="floor-counter">
+            <div class="floor-label">Vị trí hiện tại</div>
+            <div>
+                <span class="floor-value" id="floorUI">01</span>
+                <span class="floor-total">/ 300 F</span>
+            </div>
+        </div>
+
+        <!-- Thanh đo độ cao trực quan -->
+        <div class="progress-bar-container">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <!-- Bảng danh sách người chơi trực tuyến -->
+        <div class="online-list">
+            <div class="list-title">
+                <span>Phòng chơi</span>
+                <span id="playerCount" style="color: #fff;">1</span>
+            </div>
+            <div id="playerListEntries">
+                <!-- Danh sách người chơi sẽ tự động điền bằng JS ở dưới -->
+            </div>
+        </div>
+
+        <!-- Hướng dẫn điều khiển -->
+        <div class="controls-hint">
+            Di chuyển: <span class="key-cap">A</span><span class="key-cap">D</span> hoặc <span class="key-cap">◀</span><span class="key-cap">▶</span> | Nhảy: <span class="key-cap">Space</span> hoặc <span class="key-cap">W</span>
+        </div>
+    </div>
+
+    <!-- KHUNG ĐỒ HỌA GAME -->
     <canvas id="gameCanvas" width="800" height="600"></canvas>
 
 <script>
@@ -25,10 +202,10 @@ const ctx = canvas.getContext("2d");
 const gravity = 0.5;
 const friction = 0.8;
 
-// --- KHỞI TẠO NHÂN VẬT CỦA BẠN ---
+// --- KHỞI TẠO NHÂN VẬT ---
 let player = {
     x: 400, y: 500,
-    width: 25, height: 40,
+    width: 24, height: 38,
     vx: 0, vy: 0,
     isGrounded: false,
     color: '#00ffcc',
@@ -39,41 +216,70 @@ let otherPlayers = {};
 let keys = {};
 let cameraY = 0;
 
-// --- THUẬT TOÁN TỰ ĐỘNG TẠO 300 TẦNG ---
-// Thay vì viết tay 300 tầng, ta dùng toán học (Pseudo-random) để tạo ngẫu nhiên nhưng cố định cho tất cả người chơi
+// --- THUẬT TOÁN TẠO 300 TẦNG ---
 let platforms = [];
-// Nền đất xuất phát
-platforms.push({ x: 0, y: 580, width: 2000, height: 40, isFloor: true, floorNum: 1 });
+// Nền xuất phát rộng rãi
+platforms.push({ x: 0, y: 580, width: 2000, height: 40, floorNum: 1 });
 
 for (let i = 2; i <= 300; i++) {
-    let yPos = 580 - (i - 1) * 150; // Mỗi tầng cách nhau 150px chiều cao
-    // Tạo 2-3 bậc nhảy độc lập cho mỗi tầng
-    let width = 100 + Math.sin(i) * 40; // Độ rộng ngẫu nhiên từ 60px đến 140px
-    let xPos = 200 + (Math.cos(i * 5) * 250) + 200; // Vị trí X ngẫu nhiên trong màn hình
+    let yPos = 580 - (i - 1) * 150; 
+    let width = 110 + Math.sin(i) * 30; // Độ rộng gạch biến thiên mượt mà hơn
+    let xPos = 150 + (Math.cos(i * 7) * 230) + 200; 
     
     platforms.push({
         x: xPos,
         y: yPos,
         width: width,
-        height: 15,
-        isFloor: true,
+        height: 14,
         floorNum: i
     });
 }
 
-// --- KẾT NỐI MẠNG (SOCKET.IO MULTIPLAYER) ---
+// --- HÀM CẬP NHẬT ĐIỀU CHỈNH GIAO DIỆN ĐỒ HỌA (UI HUDS) ---
+function updateGameUI() {
+    // 1. Cập nhật số tầng định dạng "001"
+    let formattedFloor = player.currentFloor < 10 ? "0" + player.currentFloor : player.currentFloor;
+    document.getElementById("floorUI").innerText = formattedFloor;
+
+    // 2. Cập nhật thanh tiến trình phần trăm leo tháp
+    let progressPercent = ((player.currentFloor - 1) / 299) * 100;
+    document.getElementById("progressFill").style.height = progressPercent + "%";
+
+    // 3. Làm mới bảng danh sách người chơi online bên phải
+    let listHTML = `<div class="player-item">
+        <span><span class="player-badge" style="background:${player.color}"></span>Bạn</span>
+        <span style="color:#00ffcc; font-weight:bold;">F${player.currentFloor}</span>
+    </div>`;
+    
+    let count = 1;
+    Object.keys(otherPlayers).forEach((id) => {
+        count++;
+        let p = otherPlayers[id];
+        listHTML += `<div class="player-item">
+            <span><span class="player-badge" style="background:${p.color}"></span>ID:${id.substring(0,4)}</span>
+            <span style="color:#ff3366;">F${p.currentFloor}</span>
+        </div>`;
+    });
+    
+    document.getElementById("playerCount").innerText = count + " Online";
+    document.getElementById("playerListEntries").innerHTML = listHTML;
+}
+
+// --- KẾT NỐI MẠNG MULTIPLAYER (SOCKET.IO) ---
 socket.on('currentPlayers', (players) => {
     Object.keys(players).forEach((id) => {
         if (id !== socket.id) {
             otherPlayers[id] = players[id];
         } else {
-            player.color = players[id].color; // Lấy màu ngẫu nhiên server cấp
+            player.color = players[id].color;
         }
     });
+    updateGameUI();
 });
 
 socket.on('newPlayer', (playerInfo) => {
     otherPlayers[playerInfo.id] = playerInfo;
+    updateGameUI();
 });
 
 socket.on('playerMoved', (playerInfo) => {
@@ -81,44 +287,46 @@ socket.on('playerMoved', (playerInfo) => {
         otherPlayers[playerInfo.id].x = playerInfo.x;
         otherPlayers[playerInfo.id].y = playerInfo.y;
         otherPlayers[playerInfo.id].currentFloor = playerInfo.currentFloor;
+        updateGameUI();
     }
 });
 
 socket.on('playerDisconnected', (id) => {
     delete otherPlayers[id];
+    updateGameUI();
 });
 
 // --- LẮNG NGHE ĐIỀU KHIỂN ---
 window.addEventListener("keydown", e => keys[e.code] = true);
 window.addEventListener("keyup", e => keys[e.code] = false);
 
-// --- HÀM KIỂM TRA VA CHẠM (COLLISION DETECT) ---
 function checkCollision(p, plat) {
     return p.x < plat.x + plat.width &&
            p.x + p.width > plat.x &&
            p.y + p.height >= plat.y &&
            p.y + p.height <= plat.y + plat.height &&
-           p.vy >= 0; // Chỉ tính va chạm khi nhân vật đang rơi xuống
+           p.vy >= 0;
 }
 
-// --- VÒNG LẶP GAME (GAME LOOP) ---
+// --- VÒNG LẶP CHÍNH (GAME LOOP) ---
 function gameLoop() {
-    // 1. Xử lý di chuyển của người chơi (Bấm nút)
-    if (keys["ArrowRight"] || keys["KeyD"]) player.vx += 1;
-    if (keys["ArrowLeft"] || keys["KeyA"]) player.vx -= 1;
+    // 1. Logic nút bấm di chuyển nhân vật
+    if (keys["ArrowRight"] || keys["KeyD"]) player.vx += 0.8;
+    if (keys["ArrowLeft"] || keys["KeyA"]) player.vx -= 0.8;
     if ((keys["Space"] || keys["ArrowUp"] || keys["KeyW"]) && player.isGrounded) {
-        player.vy = -12; // Lực nhảy cao
+        player.vy = -11.5; 
         player.isGrounded = false;
     }
 
-    // Áp dụng lực vật lý (Trọng lực + Ma sát)
     player.vx *= friction;
     player.vy += gravity;
     player.x += player.vx;
     player.y += player.vy;
 
-    // 2. Xử lý va chạm với 300 tầng gạch
+    // 2. Logic tính toán va chạm nền đất
     player.isGrounded = false;
+    let oldFloor = player.currentFloor;
+    
     for (let plat of platforms) {
         if (checkCollision(player, plat)) {
             player.y = plat.y - player.height;
@@ -126,54 +334,80 @@ function gameLoop() {
             player.isGrounded = true;
             if(plat.floorNum > player.currentFloor) {
                 player.currentFloor = plat.floorNum;
-                document.getElementById("floorUI").innerText = player.currentFloor;
             }
         }
     }
 
-    // Giới hạn biên màn hình trái phải
+    // Nếu thay đổi số tầng thì cập nhật UI ngay lập tức
+    if (player.currentFloor !== oldFloor) {
+        updateGameUI();
+    }
+
     if (player.x < 0) player.x = 0;
     if (player.x > canvas.width - player.width) player.x = canvas.width - player.width;
 
-    // 3. ĐỒNG BỘ CAMERA: Camera tự động cuộn lên khi người chơi lên cao
-    let targetCameraY = player.y - canvas.height / 2;
-    cameraY += (targetCameraY - cameraY) * 0.1; // Hiệu ứng mượt mà (Lerp)
+    // 3. Đồng bộ Camera (Cuộn mượt dạng Lerp)
+    let targetCameraY = player.y - canvas.height / 2 - 50;
+    cameraY += (targetCameraY - cameraY) * 0.1;
 
-    // Gửi vị trí mới lên Server để người khác thấy
+    // Gửi vị trí đồng bộ mạng liên tục
     socket.emit('playerMovement', { x: player.x, y: player.y, currentFloor: player.currentFloor });
 
-    // 4. VẼ ĐỒ HỌA
+    // 4. VẼ ĐỒ HỌA LÊN CANVAS CHUYÊN NGHIỆP HƠN
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     ctx.save();
-    ctx.translate(0, -cameraY); // Dịch chuyển mọi vật thể theo vị trí Camera
+    ctx.translate(0, -cameraY);
 
-    // Vẽ 300 tầng
+    // Vẽ lưới điện Neon mờ ảo làm nền phía sau cho đẹp mắt (Grid effect)
+    ctx.strokeStyle = "rgba(0, 255, 204, 0.02)";
+    ctx.lineWidth = 1;
+    for (let g = 0; g < canvas.width; g += 40) {
+        ctx.beginPath(); ctx.moveTo(g, cameraY); ctx.lineTo(g, cameraY + canvas.height); ctx.stroke();
+    }
+
+    // Vẽ 300 tầng gạch dạng Neon Phát Sáng
     platforms.forEach(plat => {
-        ctx.fillStyle = plat.floorNum % 10 === 0 ? "#ff3366" : "#4ecca3"; // Đổi màu mỗi 10 tầng mốc
-        ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
-        
-        // Ghi số tầng lên gạch
-        ctx.fillStyle = "#fff";
-        ctx.font = "12px Arial";
-        ctx.fillText("Tầng " + plat.floorNum, plat.x + 5, plat.y - 5);
+        // Chỉ vẽ những gạch đang nằm trong tầm nhìn camera để game chạy mượt nhẹ
+        if (plat.y > cameraY - 100 && plat.y < cameraY + canvas.height + 100) {
+            let isCheckpoint = plat.floorNum % 10 === 0;
+            
+            // Đổ bóng phát sáng (Glow effect) cho các bậc nhảy
+            ctx.shadowBlur = isCheckpoint ? 15 : 6;
+            ctx.shadowColor = isCheckpoint ? "#ff3366" : "#00ffcc";
+            
+            ctx.fillStyle = isCheckpoint ? "rgba(255, 51, 102, 0.9)" : "rgba(0, 255, 204, 0.8)";
+            ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+            
+            // Reset hiệu ứng shadow để không làm lag nhân vật
+            ctx.shadowBlur = 0;
+
+            // Viết nhãn tầng phong cách tối giản
+            ctx.fillStyle = "rgba(255,255,255,0.25)";
+            ctx.font = "bold 10px Orbitron";
+            ctx.fillText("FLR-" + plat.floorNum, plat.x + 6, plat.y - 6);
+        }
     });
 
     // Vẽ những người chơi khác trực tuyến
     Object.keys(otherPlayers).forEach((id) => {
         let p = otherPlayers[id];
         ctx.fillStyle = p.color;
-        ctx.fillRect(p.x, p.y, 25, 40);
-        // Vẽ tên hoặc ID rút gọn phía trên đầu người chơi khác
-        ctx.fillStyle = "rgba(255,255,255,0.6)";
-        ctx.font = "10px Arial";
-        ctx.fillText(`ID: ${p.id.substring(0,4)} (Tập ${p.currentFloor})`, p.x - 10, p.y - 10);
+        ctx.fillRect(p.x, p.y, 24, 38);
+        
+        // Vẽ tag ID mini trên đầu người chơi khác
+        ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+        ctx.font = "9px Orbitron";
+        ctx.textAlign = "center";
+        ctx.fillText(`ID:${id.substring(0,4)}`, p.x + 12, p.y - 8);
+        ctx.textAlign = "left"; // Reset
     });
 
-    // Vẽ chính bạn
+    // Vẽ chính nhân vật của bạn (Có thêm khung viền trắng nổi bật)
     ctx.fillStyle = player.color;
     ctx.fillRect(player.x, player.y, player.width, player.height);
-    ctx.strokeStyle = "#fff";
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 2;
     ctx.strokeRect(player.x, player.y, player.width, player.height);
 
     ctx.restore();
@@ -181,6 +415,7 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
+// Bật chạy game
 gameLoop();
 </script>
 </body>
